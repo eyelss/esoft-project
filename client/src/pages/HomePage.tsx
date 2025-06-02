@@ -1,3 +1,4 @@
+import { Typography } from "@mui/material";
 
 function Home() {
   return (
@@ -5,10 +6,12 @@ function Home() {
       <h2>This is home!</h2>
       <p>I mean</p>
       <p>It's actually your home!</p>
-      <div className="inner">
+      <Typography
+        sx={{ py: 2 }}
+      >
         <p>Can you imagine it?</p>
         <a>I cannot...</a>
-      </div>
+      </Typography>
     </div>
   );
 }
