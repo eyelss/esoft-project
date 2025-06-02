@@ -73,14 +73,14 @@ function Register() {
           variant="body2"  
           align="center"
         >
-            Don't have account?{' '}
+            Already have account?{' '}
           <Link 
             component={ReactLink}
             type="button"
             to="/login"
             variant="body2"
           >
-            Sign-up
+            Sign-in
           </Link>
         </Typography>
         <Button
