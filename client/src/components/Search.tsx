@@ -45,7 +45,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 function SearchInput() {
   return (
-    <Search>
+    <Search sx={{ mx: 1 }}>
       <SearchIconWrapper>
         <SearchIcon />
       </SearchIconWrapper>
