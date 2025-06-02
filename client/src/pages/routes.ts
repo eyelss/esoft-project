@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import Home from "./HomePage";
 import Login from "./LoginPage";
 import NotFound from "./404";
+import Register from "./RegisterPage";
 
 type RouteType = {
   pathUrl: string;
@@ -30,6 +31,7 @@ function getNavItems<
 const ROUTES = {
   'home': { pathUrl: '/', component: Home },
   'login': { pathUrl: '/login', component: Login },
+  'register': { pathUrl: '/register', component: Register },
   'notFound': { pathUrl: '/404', component: NotFound },
 } as const satisfies RouteConfig;
 type RouteNameType = keyof typeof ROUTES;

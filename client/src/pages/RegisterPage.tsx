@@ -1,7 +1,7 @@
 import { Button, FormControl, FormLabel, Paper, Link, TextField } from "@mui/material";
 import { Link as ReactLink } from "react-router-dom";
 
-function Login() {
+function Register() {
 
   return (
     <>
@@ -16,7 +16,7 @@ function Login() {
         component="form"
       >
         <h2>
-          Sign-in
+          Sign-up
         </h2>
         <FormControl>
           <FormLabel htmlFor="login">Login</FormLabel>
@@ -52,23 +52,31 @@ function Login() {
             color="primary"
           />
         </FormControl>
-        <Link
-          component="button"
-          type="button"
-          onClick={() => alert("change pwd")}
-          variant="body2"
-          sx={{ alignSelf: 'center' }}
-        >
-          Forgot your password?
-        </Link>
+        <FormControl>
+          <FormLabel htmlFor="verify-password">Verify password</FormLabel>
+          <TextField
+            error={false}
+            // helperText={"errorMessage"}
+            id="verify-password"
+            type="password"
+            name="verify-password"
+            // placeholder="Password"
+            autoComplete="password"
+            autoFocus
+            required
+            fullWidth
+            variant="outlined"
+            color="primary"
+          />
+        </FormControl>
         <Link
           component={ReactLink}
           type="button"
-          to="/register"
+          to="/login"
           variant="body2"
           sx={{ alignSelf: 'center' }}
         >
-          Sign-up?
+          Sign-in?
         </Link>
         <Button
           type="submit"
@@ -81,4 +89,4 @@ function Login() {
   )
 }
 
-export default Login;
+export default Register;
