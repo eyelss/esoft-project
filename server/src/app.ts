@@ -12,11 +12,14 @@ app.use((req, res, next) => {
 })
 
 app.get("/", (req, res) => {
+  console.log('GET');
   console.log(req.body);
   res.status(constants.HTTP_STATUS_OK).json(req.body);
 });
 
 app.post("/", (req, res) => {
+  console.log('POST');
+  console.log(req.body);
   res.status(constants.HTTP_STATUS_CREATED).json({"you":"just posted"});
 });
 
