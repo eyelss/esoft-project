@@ -6,7 +6,6 @@ import NotFound from "./404";
 type RouteType = {
   pathUrl: string;
   component: (props: unknown) => JSX.Element;
-  redirect?: string;
 };
 
 type RouteConfig = { 
