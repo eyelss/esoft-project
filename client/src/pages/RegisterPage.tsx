@@ -1,4 +1,4 @@
-import { Button, FormControl, FormLabel, Paper, Link, TextField } from "@mui/material";
+import { Button, FormControl, FormLabel, Paper, Link, TextField, Typography } from "@mui/material";
 import { Link as ReactLink } from "react-router-dom";
 
 function Register() {
@@ -69,15 +69,20 @@ function Register() {
             color="primary"
           />
         </FormControl>
-        <Link
-          component={ReactLink}
-          type="button"
-          to="/login"
-          variant="body2"
-          sx={{ alignSelf: 'center' }}
+        <Typography 
+          variant="body2"  
+          align="center"
         >
-          Sign-in?
-        </Link>
+            Don't have account?{' '}
+          <Link 
+            component={ReactLink}
+            type="button"
+            to="/login"
+            variant="body2"
+          >
+            Sign-up
+          </Link>
+        </Typography>
         <Button
           type="submit"
           onSubmit={() => console.log('submited')}
