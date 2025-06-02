@@ -1,5 +1,6 @@
 import { AppBar, Box, Button, Typography, Toolbar, IconButton, type SvgIconTypeMap } from "@mui/material";
 import { Brightness3, Brightness7 } from "@mui/icons-material";
+import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import type { OverridableComponent } from "@mui/material/OverridableComponent";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -25,6 +26,7 @@ function Navbar() {
         position="static"
       >
         <Toolbar>
+          <RamenDiningIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {Object.entries(NAV_ITEMS).map(([pageName, route]) => (
               <Button 
