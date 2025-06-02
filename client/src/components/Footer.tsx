@@ -13,8 +13,7 @@ function Footer() {
           {'© '}
         <Link color="inherit" href="https://github.com/eyelss/">
           eyelss
-        </Link>{' '}
-        {new Date().getFullYear()}
+        </Link>{' 2025'}
       </Typography>
     </Box>
   );
