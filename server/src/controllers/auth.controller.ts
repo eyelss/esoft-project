@@ -46,7 +46,9 @@ router.post('/login',
     verifyUser(login, password).then(user => {
       // verification success
       createSession(user).then(session => {
-        res.cookie('sessionId', session.id);
+        res.cookie('sessionId', session.id, {
+          httpOnly: true
+        });
         res.status(200).json({ success: true });
       });
     }).catch((err: Error) => {
