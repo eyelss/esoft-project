@@ -1,13 +1,14 @@
 import { AppBar, Box, Button, Typography, Toolbar, IconButton, type SvgIconTypeMap } from "@mui/material";
-import { Brightness3, Brightness7 } from "@mui/icons-material";
+import { Brightness3, Brightness7, Logout } from "@mui/icons-material";
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import type { OverridableComponent } from "@mui/material/OverridableComponent";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectTheme, toggleTheme, type ThemeType } from "../features/themeSlice";
 import { NAV_ITEMS } from "../pages/routes";
 import SearchInput from "./Search";
-import { selectUser } from "../features/authSlice";
+import { logout, selectUser } from "../features/authSlice";
+import { useAppDispatch } from "../store";
 // import useAuth from "../features/auth/useAuth";
 
 const themeIcons: Record<ThemeType, OverridableComponent<SvgIconTypeMap<object, "svg">>> = {
@@ -16,7 +17,8 @@ const themeIcons: Record<ThemeType, OverridableComponent<SvgIconTypeMap<object, 
 }
 
 function Navbar() {
-  const dispatch = useDispatch();
+
+  const dispatch = useAppDispatch();
   const currentTheme = useSelector(selectTheme);
   const IconComponent = themeIcons[currentTheme];
   const user = useSelector(selectUser);
@@ -54,13 +56,20 @@ function Navbar() {
             >
               Login
             </Button>) :
-            <Button
-              color="inherit"
-              component={Link}
-              to={'/profile'}
-            >
-              {user.login}
-            </Button>
+            <>
+              <Button
+                color="inherit"
+                component={Link}
+                to={'/profile'}
+              >
+                {user.login}
+              </Button>
+              <IconButton
+                onClick={() => dispatch(logout())}
+              >
+                <Logout/>
+              </IconButton>
+            </>
           }
         </Toolbar>
       </AppBar>
