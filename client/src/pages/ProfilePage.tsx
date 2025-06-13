@@ -1,5 +1,7 @@
+import useNonAuthedRedirect from "../hooks/useNonAuthedRedirect";
 
 function Profile() {
+  useNonAuthedRedirect();
 
   return (
     <>
