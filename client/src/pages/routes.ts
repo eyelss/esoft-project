@@ -44,9 +44,14 @@ const NAV_ROUTES_NAMES = [
   'home',
 ] as const satisfies RouteNameType[];
 
+// !DRAIN FOR NON-AUTH USERS 
+const NON_AUTH_DRIAN = 'login' as const satisfies RouteNameType;
+
+// !DRAIN FOR NON-AUTH USERS 
+const AUTH_DRIAN = 'home' as const satisfies RouteNameType;
 
 const NAV_ITEMS = getNavItems(ROUTES, NAV_ROUTES_NAMES);
 
-export { NAV_ITEMS, DRAIN_ROUTE };
+export { NAV_ITEMS, DRAIN_ROUTE, NON_AUTH_DRIAN, AUTH_DRIAN };
 
 export default ROUTES;
