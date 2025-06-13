@@ -50,6 +50,9 @@ router.post('/login',
         res.status(200).json({ success: true });
       });
     }).catch((err: Error) => {
+      if (err instanceof HttpError) {
+        throw err;
+      }
       // verification error
       throw new HttpError(500, err.message);
     });

@@ -47,7 +47,7 @@ function App() {
                     element={<route.component/>}
                   />
               )}
-              <Route path='*' element={<Navigate to={routes[DRAIN_ROUTE].pathUrl} replace />} />
+              <Route path='*' element={<Navigate to={routes[DRAIN_ROUTE].pathUrl} />} />
             </Routes>
           </Container>
         </Layout>

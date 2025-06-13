@@ -10,6 +10,8 @@ const useAuthedRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('useEffect uar');
+
     if (user !== null) {
       navigate(ROUTES[AUTH_DRIAN].pathUrl);
     }

@@ -3,6 +3,7 @@ import Home from "./HomePage";
 import Login from "./LoginPage";
 import NotFound from "./404";
 import Register from "./RegisterPage";
+import Profile from "./ProfilePage";
 
 type RouteType = {
   pathUrl: string;
@@ -32,6 +33,7 @@ const ROUTES = {
   'home': { pathUrl: '/', component: Home },
   'login': { pathUrl: '/login', component: Login },
   'register': { pathUrl: '/register', component: Register },
+  'profile': {pathUrl: '/profile', component: Profile},
   'notFound': { pathUrl: '/404', component: NotFound },
 } as const satisfies RouteConfig;
 type RouteNameType = keyof typeof ROUTES;
