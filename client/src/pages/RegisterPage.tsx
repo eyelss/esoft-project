@@ -2,6 +2,7 @@ import { Button, Paper, Link, TextField, Typography } from "@mui/material";
 import { useFormik } from "formik";
 import { Link as ReactLink } from "react-router-dom";
 import * as yup from "yup";
+import useAuthedRedirect from "../hooks/useAuthedRedirect";
 
 const validationSchema = yup.object({
   login: yup
@@ -19,24 +20,26 @@ const validationSchema = yup.object({
 });
 
 function Register() {
-    const formik = useFormik({
-      initialValues: {
-        login: '',
-        password: '',
-        confirmPassword: '',
-      },
-      validationSchema: validationSchema,
-      onSubmit: ({ login, password }) => {
-        fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ login, password })
-        }).then(result => result.json())
-          .then(json => console.log(json));
-      }
-    });
+  useAuthedRedirect();
+
+  const formik = useFormik({
+    initialValues: {
+      login: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validationSchema: validationSchema,
+    onSubmit: ({ login, password }) => {
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ login, password })
+      }).then(result => result.json())
+        .then(json => console.log(json));
+    }
+  });
 
   return (
   <Paper

@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import { verifySession } from "../features/authSlice";
 import { useAppDispatch } from "../store";
+import useAuthedRedirect from "../hooks/useAuthedRedirect";
 
 const validationSchema = yup.object({
   login: yup
@@ -16,6 +17,7 @@ const validationSchema = yup.object({
 });
 
 function Login() {
+  useAuthedRedirect();
   const dispatch = useAppDispatch();
 
   const formik = useFormik({
