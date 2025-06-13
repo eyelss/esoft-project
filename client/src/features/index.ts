@@ -1,6 +1,6 @@
 import type { Reducer } from "@reduxjs/toolkit"
 import themeReducer from "./themeSlice";
-import authReducer from "./auth/authSlice";
+import authReducer from "./authSlice";
 
 type ReducersDict = {
   [key: string]: Reducer;

@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { selectTheme, toggleTheme, type ThemeType } from "../features/themeSlice";
 import { NAV_ITEMS } from "../pages/routes";
 import SearchInput from "./Search";
-import { selectUser } from "../features/auth/authSlice";
+import { selectUser } from "../features/authSlice";
 // import useAuth from "../features/auth/useAuth";
 
 const themeIcons: Record<ThemeType, OverridableComponent<SvgIconTypeMap<object, "svg">>> = {

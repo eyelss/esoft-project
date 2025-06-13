@@ -2,7 +2,7 @@ import { Button, Paper, Link, TextField, Typography } from "@mui/material";
 import { Link as ReactLink } from "react-router-dom";
 import { useFormik } from "formik";
 import * as yup from "yup";
-import { verifySession } from "../features/auth/authSlice";
+import { verifySession } from "../features/authSlice";
 import { useAppDispatch } from "../store";
 
 const validationSchema = yup.object({
