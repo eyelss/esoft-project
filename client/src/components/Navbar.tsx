@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import { selectTheme, toggleTheme, type ThemeType } from "../features/themeSlice";
 import { NAV_ITEMS } from "../pages/routes";
 import SearchInput from "./Search";
+import { selectUser } from "../features/auth/authSlice";
+// import useAuth from "../features/auth/useAuth";
 
 const themeIcons: Record<ThemeType, OverridableComponent<SvgIconTypeMap<object, "svg">>> = {
   dark: Brightness7,
@@ -17,6 +19,7 @@ function Navbar() {
   const dispatch = useDispatch();
   const currentTheme = useSelector(selectTheme);
   const IconComponent = themeIcons[currentTheme];
+  const user = useSelector(selectUser);
   
   return (
     <Box 
@@ -43,13 +46,22 @@ function Navbar() {
           <IconButton onClick={() => dispatch(toggleTheme())}>
             <IconComponent/>
           </IconButton>
-          <Button 
-            color="inherit"
-            component={Link}
-            to={'/login'}
-          >
-            Login
-          </Button>
+          {user === null ?
+            (<Button 
+              color="inherit"
+              component={Link}
+              to={'/login'}
+            >
+              Login
+            </Button>) :
+            <Button
+              color="inherit"
+              component={Link}
+              to={'/profile'}
+            >
+              {user.login}
+            </Button>
+          }
         </Toolbar>
       </AppBar>
     </Box>

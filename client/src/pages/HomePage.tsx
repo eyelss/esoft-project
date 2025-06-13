@@ -8,9 +8,10 @@ function Home() {
       <p>It's actually your home!</p>
       <Typography
         sx={{ py: 2 }}
+        component="div"
       >
         <p>Can you imagine it?</p>
-        <a>I cannot...</a>
+        <p>I cannot...</p>
       </Typography>
     </div>
   );

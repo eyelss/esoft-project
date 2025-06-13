@@ -1,70 +1,94 @@
-import { Button, FormControl, FormLabel, Paper, Link, TextField, Typography } from "@mui/material";
+import { Button, Paper, Link, TextField, Typography } from "@mui/material";
 import { Link as ReactLink } from "react-router-dom";
+import { useFormik } from "formik";
+import * as yup from "yup";
+import { verifySession } from "../features/auth/authSlice";
+import { useAppDispatch } from "../store";
+
+const validationSchema = yup.object({
+  login: yup
+    .string()
+    .required('Login is required.'),
+  password: yup
+    .string()
+    .min(8)
+    .required('Password is required.'),
+});
 
 function Login() {
+  const dispatch = useAppDispatch();
+
+  const formik = useFormik({
+    initialValues: {
+      login: '',
+      password: '',
+    },
+    validationSchema: validationSchema,
+    onSubmit: (values) => {
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          login: values.login,
+          password: values.password,
+        }),
+      }).then(async response => {
+        if (response.ok) {
+          dispatch(verifySession());
+        }
+      })
+    }
+  });
 
   return (
-    <>
-      <Paper
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 4,
-          p: 3,
-          pt: 1,
-        }}
-        elevation={3}
-        component="form"
-      >
-        <h2>
-          Sign-in
-        </h2>
-        <FormControl>
-          <FormLabel htmlFor="login">Login</FormLabel>
-          <TextField
-            error={false}
-            // helperText={"errorMessage"}
-            id="login"
-            type="login"
-            name="login"
-            // placeholder="login"
-            autoComplete="email"
-            autoFocus
-            required
-            fullWidth
-            variant="outlined"
-            color="primary"
-          />
-        </FormControl>
-        <FormControl>
-          <FormLabel htmlFor="password">Password</FormLabel>
-          <TextField
-            error={false}
-            // helperText={"errorMessage"}
-            id="password"
-            type="password"
-            name="password"
-            // placeholder="Password"
-            autoComplete="password"
-            autoFocus
-            required
-            fullWidth
-            variant="outlined"
-            color="primary"
-          />
-        </FormControl>
-        <Link
-          component="button"
-          type="button"
-          onClick={() => alert("change pwd")}
-          variant="body2"
-          sx={{ alignSelf: 'center' }}
-        >
-          Forgot your password?
-        </Link>
+    <Paper
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 4,
+        p: 3,
+        pt: 1,
+      }}
+      elevation={3}
+      component="div"
+    >
+      <h2>
+        Sign-in
+      </h2>
+      <form onSubmit={formik.handleSubmit}>
+        <TextField
+          fullWidth
+          id="login"
+          label="Login"
+          type="login"
+          name="login"
+          value={formik.values.login}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          error={formik.touched.login && Boolean(formik.errors.login)}
+          helperText={formik.touched.login && formik.errors.login}
+          sx={{ mb: 1 }}
+        />
+        <TextField
+          fullWidth
+          id="password"
+          label="Password"
+          type="password"
+          name="password"
+          placeholder="password"
+          value={formik.values.password}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          error={formik.touched.password && Boolean(formik.errors.password)}
+          helperText={formik.touched.password && formik.errors.password}
+          sx={{ mb: 1 }}
+        />
         <Typography 
           variant="body2"  
           align="center"
+          my={3}
         >
             Don't have account?{' '}
           <Link 
@@ -77,13 +101,15 @@ function Login() {
           </Link>
         </Typography>
         <Button
+          color="primary"
+          variant="contained"
+          fullWidth
           type="submit"
-          onSubmit={() => console.log('submited')}
         >
           Submit
         </Button>
-      </Paper>
-    </>
+      </form>
+    </Paper>
   )
 }
 
