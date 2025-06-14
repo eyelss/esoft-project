@@ -71,7 +71,6 @@ router.post('/verify',
 router.post('/logout', 
   authMiddleware, 
   (req, res, next) => {
-    console.log('Logout')
     const sessionId = req.cookies.sessionId;
 
     if (sessionId === undefined) {
@@ -82,7 +81,11 @@ router.post('/logout',
       res.clearCookie('sessionId')
       res.sendStatus(200);
     }).catch(err => {
-      throw new HttpError(500, 'Session destruction is failed');
+      if (err instanceof HttpError) {
+        throw err
+      }
+      
+      throw new HttpError(500, err.message);
     });
 });
 
