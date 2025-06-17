@@ -28,7 +28,7 @@ const createStepByDto = async (dto: CreateStepDto, context: PrismaClient = prism
   });
 }
 
-const createStepOnRecipe = async (owner: Recipe, dto: CreateStepDto) => {
+export const createStepOnRecipe = async (owner: Recipe, dto: CreateStepDto) => {
   return await prisma.$transaction(async (ctx) => {
     const createdStep = await createStepByDto(dto, ctx);
 
@@ -45,7 +45,7 @@ const createStepOnRecipe = async (owner: Recipe, dto: CreateStepDto) => {
   });
 }
 
-const createStepOnStep = async (owner: Step, dto: CreateStepDto) => {
+export const createStepOnStep = async (owner: Step, dto: CreateStepDto) => {
   return await prisma.$transaction(async (ctx) => {
     const createdStep = await createStepByDto(dto, ctx);
 
@@ -68,7 +68,7 @@ type RemoveStepDto = {
   id: Step['id'];
 }
 
-const removeStep = async (dto: RemoveStepDto) => {
+export const removeStep = async (dto: RemoveStepDto) => {
   // it should destory edges with children and parents
   // still not sure about best approach here.
   // edit mode and actual storage state are different things
