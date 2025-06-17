@@ -29,7 +29,46 @@ model Session {
   user            User      @relation(fields: [userId], references: [id])
 
   expiredAt       DateTime  @map("expired_at")
+  createdAt       DateTime  @map("created_at")  @default(now())
   data            Json
 
   @@map("sessions")
+}
+
+model Recipe {
+  id              String    @id @default(nanoid())
+  title           String
+  description     String?
+  
+  rootStep        Step      @relation(fields: [rootStepId], references: [id])
+  rootStepId      String    @map("root_step_id") @unique
+
+  @@map("recipes")
+}
+
+model Step {
+  id              String    @id @default(nanoid())
+
+  recipe          Recipe?
+
+  title           String
+  description     String?
+
+  prologue        String
+  extension       StepExtension?
+
+  roots           Step[]  @relation("StepRelations")
+  children        Step[]  @relation("StepRelations")
+  @@map("steps")
+}
+
+model StepExtension {
+  baseStep        Step      @relation(fields: [baseStepId], references: [id])
+  baseStepId      String    @id @map("step_id")
+
+  body            String
+  duration        Int
+  epilogue        String
+
+  @@map("step_extensions")
 }
