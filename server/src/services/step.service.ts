@@ -64,15 +64,20 @@ export const createStepOnStep = async (owner: Step, dto: CreateStepDto) => {
   });
 }
 
-type RemoveStepDto = {
-  id: Step['id'];
-}
-
-export const removeStep = async (dto: RemoveStepDto) => {
+export const removeStep = async (id: Step['id']) => {
   // it should destory edges with children and parents
   // still not sure about best approach here.
   // edit mode and actual storage state are different things
   return await prisma.step.delete({
-    where: { ...dto },
+    where: { id },
   })
+}
+
+type UpdateStepDtp = Partial<Step>;
+
+export const updateStep = async (id: Step['id'], dto: UpdateStepDtp) => {
+  return await prisma.step.update({
+    where: { id },
+    data: { ...dto },
+  });
 }

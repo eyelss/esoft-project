@@ -51,14 +51,18 @@ model Step {
 
   recipe          Recipe?
 
+  // UI reactflow coordinates (it's too hard to generate this values from their hierarchy)
+  x               Int
+  y               Int
+
   title           String
   description     String?
 
   prologue        String
   extension       StepExtension?
 
-  roots           Step[]  @relation("StepRelations")
-  children        Step[]  @relation("StepRelations")
+  roots           Step[]  @relation("step_relations")
+  children        Step[]  @relation("step_relations")
   @@map("steps")
 }
 

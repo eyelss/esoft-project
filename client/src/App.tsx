@@ -5,9 +5,9 @@ import Layout from './components/Layout';
 import { useSelector } from 'react-redux';
 import { selectTheme } from './features/themeSlice';
 import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom';
-import routes, { DRAIN_ROUTE } from './pages/routes';
+import routes, { drainRoute } from './pages/routes';
 import { Container } from '@mui/material';
-import RouterContext from './RouterContext';
+import RouterContext from './components/RouterContext';
 import { verifySession } from './features/authSlice';
 import { useAppDispatch } from './store';
 
@@ -47,7 +47,7 @@ function App() {
                     element={<route.component/>}
                   />
               )}
-              <Route path='*' element={<Navigate to={routes[DRAIN_ROUTE].pathUrl} />} />
+              <Route path='*' element={<Navigate to={drainRoute.pathUrl} />} />
             </Routes>
           </Container>
         </Layout>

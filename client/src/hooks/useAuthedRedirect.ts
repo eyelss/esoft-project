@@ -2,18 +2,22 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../features/authSlice";
-import ROUTES, { NON_AUTH_DRIAN } from "../pages/routes";
+import routes, { authDrain } from "../pages/routes";
 
-// hook for redirect if user not authorized
-const useNonAuthedRedirect = () => {
+// hook for redirect if user IS authorized
+const useAuthedRedirect = () => {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
 
+  if (user !== null) {
+    navigate(routes[authDrain].pathUrl);
+  }
+
   useEffect(() => {
-    if (user === null) {
-      navigate(ROUTES[NON_AUTH_DRIAN].pathUrl);
+    if (user !== null) {
+      navigate(routes[authDrain].pathUrl);
     }
   }, [navigate, user])
 }
 
-export default useNonAuthedRedirect;
+export default useAuthedRedirect;

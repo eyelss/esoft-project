@@ -4,6 +4,7 @@ import Login from "./LoginPage";
 import NotFound from "./404";
 import Register from "./RegisterPage";
 import Profile from "./ProfilePage";
+import Recipe from "./RecipePage";
 
 type RouteType = {
   pathUrl: string;
@@ -29,31 +30,34 @@ function getNavItems<
 
 
 // !ALL APP ROUTES
-const ROUTES = {
+const routes = {
   'home': { pathUrl: '/', component: Home },
   'login': { pathUrl: '/login', component: Login },
   'register': { pathUrl: '/register', component: Register },
-  'profile': {pathUrl: '/profile', component: Profile},
+  'profile': { pathUrl: '/profile', component: Profile },
+  'recipe': { pathUrl: '/recipe', component: Recipe },
+  'recipeId': { pathUrl: '/recipe/:recipeId', component: Recipe },
   'notFound': { pathUrl: '/404', component: NotFound },
 } as const satisfies RouteConfig;
-type RouteNameType = keyof typeof ROUTES;
+type RouteNameType = keyof typeof routes;
 
 // !DRAIN ROUTE (REPLACES NON-EXSITENT PATH)
-const DRAIN_ROUTE = 'notFound' as const satisfies RouteNameType;
+const drainRoute = routes['notFound'];// as const satisfies RouteNameType;
 
 // !VISIBLE ROUTES ON NAVIGATION BAR
-const NAV_ROUTES_NAMES = [
+const navRoutesNames = [
   'home',
+  'recipe',
 ] as const satisfies RouteNameType[];
 
 // !DRAIN FOR NON-AUTH USERS 
-const NON_AUTH_DRIAN = 'login' as const satisfies RouteNameType;
+const nonAuthDrain = 'login' as const satisfies RouteNameType;
 
 // !DRAIN FOR NON-AUTH USERS 
-const AUTH_DRIAN = 'home' as const satisfies RouteNameType;
+const authDrain = 'home' as const satisfies RouteNameType;
 
-const NAV_ITEMS = getNavItems(ROUTES, NAV_ROUTES_NAMES);
+const navItems = getNavItems(routes, navRoutesNames);
 
-export { NAV_ITEMS, DRAIN_ROUTE, NON_AUTH_DRIAN, AUTH_DRIAN };
+export { navItems, drainRoute, nonAuthDrain, authDrain };
 
-export default ROUTES;
+export default routes;
