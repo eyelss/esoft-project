@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { hasCycle, isDescendant } from "../utils/graph";
 
 type ChangeStatus = 
 | 'created'
@@ -6,16 +7,16 @@ type ChangeStatus =
 | 'deleted'
 | 'untouched';
 
-const generateTempId = () => String(new Date().getTime())
+const generateTempId = () => String(new Date().getTime());
 
-type Step = {
-  // id: string;
+export type Step = {
+  id: string;
   title: string;
   description?: string;
   status: ChangeStatus;
 };
 
-type Relation = {
+export type Relation = {
   // id: string;
   status: ChangeStatus;
   parentId: string;
@@ -47,8 +48,12 @@ const initialState = {
 
 export const loadRecipe = createAsyncThunk(
   'recipe/loadRecipe',
-  async ( id: string ) => {
+  async ( id: string, { rejectWithValue } ) => {
     const response = await fetch(`/api/recipes/${id}`);
+
+    if (!response.ok) {
+      return await rejectWithValue(response.status)
+    }
 
     return await response.json();
   }
@@ -66,12 +71,13 @@ const recipeSlice = createSlice({
       const id = generateTempId();
 
       state.recipe.steps[id] = {
+        id,
         title: action.payload,
         status: 'created',
       };
     },
     deleteStep: (state, action) => {
-      const { id } = action.payload;
+      const id = action.payload;
 
       if (state.recipe === null || state.recipe.rootStepId === id) {
         return;
@@ -100,11 +106,14 @@ const recipeSlice = createSlice({
       if (state.recipe === null) {
         return;
       }
+
+      const title = action.payload;
       
       const stepId = generateTempId();
 
       state.recipe.steps[stepId] = {
-        title: action.payload,
+        id: stepId,
+        title,
         status: 'created',
       };
 
@@ -130,7 +139,7 @@ const recipeSlice = createSlice({
       };
     },
     deleteConn: (state, action) => {
-      const { id } = action.payload;
+      const id = action.payload;
 
       if (state.recipe === null) {
         return;
@@ -146,12 +155,13 @@ const recipeSlice = createSlice({
       state.loading = false;
       state.error = null;
       
+      const stepId = generateTempId()
       const root: Step = {
+        id: stepId,
         title: 'New step',
         status: 'created',
       }
 
-      const stepId = generateTempId()
 
       state.recipe = {
         id: generateTempId(),
@@ -163,6 +173,19 @@ const recipeSlice = createSlice({
       }
 
       state.recipe.steps[stepId] = root;
+    },
+    shiftCurrent: (state, action) => {
+      if (state.recipe === null) {
+        return;
+      }
+
+      const stepId = action.payload;
+      
+      const newCurrentStepId = Object.keys(state.recipe.steps).find((id) => id === stepId);
+
+      if (newCurrentStepId !== undefined) {
+        state.recipe.currentStepId = newCurrentStepId;
+      }
     }
   },
   selectors: {
@@ -188,7 +211,7 @@ const recipeSlice = createSlice({
 
       return Object.values(state.recipe.relations)
         .filter(rel => rel.parentId === currentStepId)
-        .map(rel => steps[rel.parentId]);
+        .map(rel => steps[rel.childId]);
     },
     selectParentsOfCurrent: (state) => {
       if (state.recipe === null) {
@@ -202,7 +225,22 @@ const recipeSlice = createSlice({
       return Object.values(state.recipe.relations)
         .filter(rel => rel.childId === currentStepId)
         .map(rel => steps[rel.parentId]);
-    }
+    },
+    selectPossibleChildren: (state) => {
+      if (state.recipe === null) {
+        return [];
+      }
+
+      const currentStepId = state.recipe.currentStepId;
+
+      const steps = Object.values(state.recipe.steps);
+      const rels = Object.values(state.recipe.relations);
+      
+      return steps.filter(step => 
+        !hasCycle(steps, rels, currentStepId, step.id) && 
+        !isDescendant(steps, rels, currentStepId, step.id)
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -231,11 +269,15 @@ export const {
   createConn,
   deleteConn,
   createEmpty,
+  shiftCurrent,
 } = recipeSlice.actions;
+
 export const {  
   selectRecipe,
   selectCurrentStep,
   selectChildrenOfCurrent,
-  selectParentsOfCurrent
+  selectParentsOfCurrent,
+  selectPossibleChildren,
 } = recipeSlice.selectors;
+
 export default recipeSlice.reducer;

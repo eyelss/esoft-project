@@ -11,6 +11,6 @@ const reducers: ReducersDict = {
   theme: themeReducer,
   recipe: recipeReducer,
   auth: authReducer,
-}
+};
 
 export default reducers;
