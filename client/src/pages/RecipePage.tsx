@@ -1,11 +1,14 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputLabel, List, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Select, type SelectChangeEvent } from "@mui/material";
+import { Box, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputLabel, List, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Select, Toolbar, type SelectChangeEvent } from "@mui/material";
 import { useAppDispatch } from "../store";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import ShareIcon from "@mui/icons-material/Share"
-import { loadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn } from "../features/recipeSlice";
+import EditIcon from '@mui/icons-material/Edit';
+import { loadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, selectRecipeContent } from "../features/recipeSlice";
+import { TransitionGroup } from 'react-transition-group';
+import ListItemButtonStep from "../components/ListItemButtonStep";
 
 function Editor() {
   const dispatch = useAppDispatch();
@@ -13,14 +16,18 @@ function Editor() {
   const children = useSelector(selectChildrenOfCurrent);
   const parents = useSelector(selectParentsOfCurrent);
   const possibleChildren = useSelector(selectPossibleChildren);
+  const [recipeTitle, recipeDescription, recipeStatus] = useSelector(selectRecipeContent);
   const [dialOpen, setDialOpen] = useState(false);
   const [selectedStepId, setSelectedStepId] = useState('');
+  const [editable, setEditable] = useState(false);
 
   const params = useParams();
 
   useEffect(() => {
     if (params.recipeId === undefined) {
-      dispatch(createEmpty());
+      if (recipeStatus !== 'created') {
+        dispatch(createEmpty());
+      }
     } else {
       dispatch(loadRecipe(params.recipeId));
     }
@@ -28,12 +35,12 @@ function Editor() {
   }, [params.recipeId, dispatch]);
 
   return (
+
     <Box
       sx={{
         display: 'flex',
         height: '100vh',
-        p: 2,
-        gap: 2,
+        gap: 1,
       }}
     >
       <Paper sx={{ width: '10vw', overflow: 'auto' }}>
@@ -42,23 +49,28 @@ function Editor() {
             Parents
           </ListSubheader>
         }>
+          <TransitionGroup>
           {currentStep !== undefined ? 
             parents.map(parent => 
+              <Collapse key={parent.id}>
               <ListItemButton 
                 key={parent.id}
                 onClick={() => dispatch(shiftCurrent(parent.id))}
-              >
+                >
                 {parent.title}
               </ListItemButton>
+              </Collapse>
             ) : ''
           }
+          </TransitionGroup>
         </List>
       </Paper>
 
       <Paper sx={{ flex: 1 }}>
+        <EditIcon/>
         <Box sx={{ p: 3 }}>
-          <h2>Recipe content</h2>
-          <p>Primary recipe content section</p>
+          <h2>{recipeTitle}</h2>
+          <p>{recipeDescription}</p>
           <h2>{currentStep?.title}</h2>
           <p>{currentStep?.description}</p>
         </Box>
@@ -66,26 +78,35 @@ function Editor() {
 
       <Paper sx={{ width: '10vw', overflow: 'auto' }}>
         <List subheader={
-          <ListSubheader>
-            Children
-            <IconButton onClick={() => setDialOpen(true)}>
-              <ShareIcon />
-            </IconButton>
-            <IconButton onClick={() => dispatch(appendStep('another one'))}>
-              <AddIcon />
-            </IconButton>
+          <ListSubheader sx={{ alignItems: 'center', justifyItems: 'center', justifyContent: 'center'}}>
+            <Box sx={{ textAlign: 'center' }}>
+              Children
+            </Box>
+            <ButtonGroup sx={{ justifySelf: 'center'}}>
+              <IconButton onClick={() => setDialOpen(true)}>
+                <ShareIcon />
+              </IconButton>
+              <IconButton onClick={() => dispatch(appendStep('another one'))}>
+                <AddIcon />
+              </IconButton>
+            </ButtonGroup>
           </ListSubheader>
         }>
+          <TransitionGroup>
           {currentStep !== undefined ? 
             children.map(child => 
-              <ListItemButton
+              <Collapse key={child.id}>
+              <ListItemButtonStep
+                status={child.status}
                 key={child.id}
                 onClick={() => dispatch(shiftCurrent(child.id))}
               >
                 {child.title}
-              </ListItemButton>
+              </ListItemButtonStep>
+              </Collapse>
             ) : ''
           }
+          </TransitionGroup>
         </List>
       </Paper>
       <Dialog

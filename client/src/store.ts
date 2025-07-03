@@ -4,6 +4,7 @@ import reducers from "./features";
 
 const store = configureStore({
   reducer: reducers,
+  devTools: true,
 });
 
 export type RootState = ReturnType<typeof store.getState>;

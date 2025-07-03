@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { hasCycle, isDescendant } from "../utils/graph";
 
-type ChangeStatus = 
+export type ChangeStatus = 
 | 'created'
 | 'modified'
 | 'deleted'
@@ -25,6 +25,9 @@ export type Relation = {
 
 type Recipe = {
   id: string;
+  title: string;
+  description: string;
+
   status: ChangeStatus;
   currentStepId: string;
   rootStepId: string;
@@ -165,6 +168,9 @@ const recipeSlice = createSlice({
 
       state.recipe = {
         id: generateTempId(),
+        title: 'New recipe',
+        description: 'Description of your recipe',
+
         status: 'created',
         currentStepId: stepId,
         rootStepId: stepId,
@@ -189,8 +195,8 @@ const recipeSlice = createSlice({
     }
   },
   selectors: {
-    selectRecipe: (state) => {
-      return state.recipe;
+    selectRecipeContent: (state): [string | undefined, string | undefined , ChangeStatus | undefined] => {
+      return [state.recipe?.title, state.recipe?.description, state.recipe?.status];
     },
     selectCurrentStep: (state) => {
       if (state.recipe === null) {
@@ -273,7 +279,7 @@ export const {
 } = recipeSlice.actions;
 
 export const {  
-  selectRecipe,
+  selectRecipeContent,
   selectCurrentStep,
   selectChildrenOfCurrent,
   selectParentsOfCurrent,
