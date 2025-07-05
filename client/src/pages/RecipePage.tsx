@@ -13,9 +13,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SaveIcon from '@mui/icons-material/Save';
 import FeedIcon from '@mui/icons-material/Feed';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn } from "../features/recipeSlice";
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus } from "../features/recipeSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
+import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 
@@ -25,11 +26,16 @@ function Editor() {
   const children = useSelector(selectChildrenOfCurrent);
   const parents = useSelector(selectParentsOfCurrent);
   const possibleChildren = useSelector(selectPossibleChildren);
-  const { title, description, status } = useSelector(selectRecipe) || {};
+  const deletableParentConnections = useSelector(selectDeletableParentConnections);
+  const deletableChildConnections = useSelector(selectDeletableChildConnections);
+  const recipe = useSelector(selectRecipe);
+  const playModeStatus = useSelector(selectPlayModeStatus);
+  const { title, description, status } = recipe || {};
   const isOwning = useSelector(selectIsUserOwner);
   const [dialOpen, setDialOpen] = useState(false);
   const [selectedStepId, setSelectedStepId] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const isDeletable = children.length === 0; // && isOwning; 
 
   const params = useParams();
 
@@ -44,6 +50,42 @@ function Editor() {
     
   }, [params.recipeId, status, dispatch]);
 
+  // Helper function to find relation ID for a parent connection
+  const getParentRelationId = (parentId: string) => {
+    if (!recipe || !currentStep) return null;
+    
+    const relationEntry = Object.entries(recipe.relations).find(
+      ([_, rel]) => rel.childId === currentStep.id && rel.parentId === parentId
+    );
+    return relationEntry ? relationEntry[0] : null;
+  };
+
+  // Helper function to find relation ID for a child connection
+  const getChildRelationId = (childId: string) => {
+    if (!recipe || !currentStep) return null;
+    
+    const relationEntry = Object.entries(recipe.relations).find(
+      ([_, rel]) => rel.parentId === currentStep.id && rel.childId === childId
+    );
+    return relationEntry ? relationEntry[0] : null;
+  };
+
+  // Handle parent connection deletion
+  const handleDeleteParentConnection = (parentId: string) => {
+    const relationId = getParentRelationId(parentId);
+    if (relationId && deletableParentConnections.includes(relationId)) {
+      dispatch(deleteConn(relationId));
+    }
+  };
+
+  // Handle child connection deletion
+  const handleDeleteChildConnection = (childId: string) => {
+    const relationId = getChildRelationId(childId);
+    if (relationId && deletableChildConnections.includes(relationId)) {
+      dispatch(deleteConn(relationId));
+    }
+  };
+
   return (
 
     <Box
@@ -53,200 +95,244 @@ function Editor() {
         gap: 1,
       }}
     >
-      <Paper sx={{ width: '10vw', overflow: 'auto' }}>
-        <List subheader={
-          <ListSubheader>
-            Parents
-          </ListSubheader>
-        }>
-          <TransitionGroup>
-          {currentStep !== undefined ? 
-            parents.map(parent => 
-              <Collapse key={parent.id}>
-              <ListItemButtonStep 
-                key={parent.id}
-                status={parent.status}
-                onClick={() => dispatch(shiftCurrent(parent.id))}
-                deletable={parents.length > 1}
-              >
-                {parent.title}
-              </ListItemButtonStep>
-              </Collapse>
-            ) : ''
-          }
-          </TransitionGroup>
-        </List>
-      </Paper>
+      {editMode && (
+        <Paper sx={{ width: '10vw', overflow: 'auto' }}>
+          <List subheader={
+            <ListSubheader>
+              Parents
+            </ListSubheader>
+          }>
+            <TransitionGroup>
+            {currentStep !== undefined ? 
+              parents.map(parent => {
+                const relationId = getParentRelationId(parent.id);
+                const isDeletable = relationId && deletableParentConnections.includes(relationId);
+                
+                return (
+                  <Collapse key={parent.id}>
+                  <ListItemButtonStep 
+                    key={parent.id}
+                    status={parent.status}
+                    onClick={() => dispatch(shiftCurrent(parent.id))}
+                    deletable={!!(isDeletable && editMode)}
+                    onClickDelete={() => handleDeleteParentConnection(parent.id)}
+                  >
+                    {parent.title}
+                  </ListItemButtonStep>
+                  </Collapse>
+                );
+              }) : ''
+            }
+            </TransitionGroup>
+          </List>
+        </Paper>
+      )}
 
       <Paper sx={{ flex: 1 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ m: 1, alignContent: 'center'}}>
-          {!editMode &&
-            <Link
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center' }}
-              color="inherit"
-              component="button"
-              onClick={() => {}}
-            >
-              <PlayArrowIcon sx={{ mr: .6 }} fontSize="inherit"/>
-              Play
-            </Link>
-          }
-          { !editMode &&
-            <Link
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center' }}
-              color="inherit"
-              component="button"
-              onClick={() => setEditMode(true)}
-            >
-              <EditIcon sx={{ mr: .6 }} fontSize="inherit"/>
-              Edit
-            </Link>
-          }
-          { editMode &&
-            <Link
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center' }}
-              color="inherit"
-              component="button"
-              onClick={() => setEditMode(false)}
-            >
-              <SaveIcon sx={{ mr: .6 }} fontSize="inherit"/>
-              Save
-            </Link>
-          }
-          {children.length === 0 &&
-            <Link
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center' }}
-              color="inherit"
-              component="button"
-              onClick={() => {}}
-            >
-              <DeleteIcon sx={{ mr: .6 }} fontSize="inherit"/>
-              Delete
-            </Link>
-          }
-        </Breadcrumbs>
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon/>}
-          >
-            <TextField 
-              fullWidth
-              id="recipe-title" 
-              label="Title" 
-              variant="standard" 
-              value={title} 
-              slotProps={{ input: { readOnly: !editMode } }}
-              onChange={(e) => dispatch(setRecipe({ title: e.target.value }))}
-              onFocus={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          </AccordionSummary>
-          <AccordionDetails>
-            <TextField 
-              fullWidth
-              multiline 
-              id="recipe-description" 
-              label="Description" 
-              value={description} 
-              slotProps={{ input: { readOnly: !editMode } }}
-              onChange={(e) => dispatch(setRecipe({ description: e.target.value }))}
-            />
-            <Rating sx={{ py: 1 }} size="small"/>
-          </AccordionDetails>
-        </Accordion>
-        <Divider/>
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon/>}
-          >
-            <TextField
-              fullWidth 
-              id="step-title" 
-              variant="standard" 
-              label="Title" 
-              value={currentStep?.title ?? ''} 
-              slotProps={{ input: { readOnly: !editMode } }}
-              onChange={(e) => dispatch(setCurrent({ title: e.target.value }))}
-              onFocus={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          </AccordionSummary>
-          <AccordionDetails>
-            <TextField 
-              multiline 
-              fullWidth 
-              label="Instruction" 
-              id="step-instruction" 
-              value={currentStep?.instruction ?? ''} 
-              slotProps={{ input: { readOnly: !editMode } }}
-              onChange={(e) => dispatch(setCurrent({ instruction: e.target.value }))}
-
-            />
-              <Collapse in={editMode}>
-              <Button sx={{ my: 2 }} fullWidth onClick={() => dispatch(expandCurrent())}>
+        {!editMode ? (
+          // Play Mode View
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5">
+                {title || 'Recipe Title'}
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<EditIcon />}
+                onClick={() => setEditMode(true)}
+              >
+                Edit Recipe
+              </Button>
+            </Box>
+            
+            <PlayMode />
+            
+            {/* Recipe Info */}
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                <Typography variant="h6">
+                  Recipe Details
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body1">
+                  {description || 'Recipe description'}
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
+        ) : (
+          // Edit Mode View
+          <>
+            <Breadcrumbs aria-label="breadcrumb" sx={{ m: 1, alignContent: 'center'}}>
+              { editMode &&
+                <Link
+                  underline="hover"
+                  sx={{ display: 'flex', alignItems: 'center' }}
+                  color="inherit"
+                  component="button"
+                  onClick={() => setEditMode(false)}
+                >
+                  <PlayArrowIcon sx={{ mr: .6 }} fontSize="inherit"/>
+                  Play
+                </Link>
+              }
+              { isDeletable && editMode &&
+                <Link
+                  underline="hover"
+                  sx={{ display: 'flex', alignItems: 'center' }}
+                  color="inherit"
+                  component="button"
+                  onClick={() => {}}
+                >
+                  <DeleteIcon sx={{ mr: .6 }} fontSize="inherit"/>
+                  Delete
+                </Link>
+              }
+            </Breadcrumbs>
+            
+            {/* Recipe Title and Description */}
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <TextField 
+                fullWidth
+                id="recipe-title" 
+                label="Recipe Title" 
+                variant="standard" 
+                value={title} 
+                onChange={(e) => dispatch(setRecipe({ title: e.target.value }))}
+                sx={{ mb: 2 }}
+              />
+              <TextField 
+                fullWidth
+                multiline 
+                id="recipe-description" 
+                label="Recipe Description" 
+                value={description} 
+                onChange={(e) => dispatch(setRecipe({ description: e.target.value }))}
+                rows={3}
+              />
+            </Box>
+            
+            {/* Current Step */}
+            <Box sx={{ p: 2, minHeight: 0, overflow: 'auto' }}>
+              <Typography variant="h6" gutterBottom>
+                Current Step
+              </Typography>
+              <TextField
+                fullWidth 
+                id="step-title" 
+                variant="standard" 
+                label="Step Title" 
+                value={currentStep?.title ?? ''} 
+                onChange={(e) => dispatch(setCurrent({ title: e.target.value }))} 
+                sx={{ mb: 2 }}
+              />
+              <TextField 
+                multiline 
+                fullWidth 
+                label="Step Instruction" 
+                id="step-instruction" 
+                value={currentStep?.instruction ?? ''} 
+                onChange={(e) => dispatch(setCurrent({ instruction: e.target.value }))}
+                rows={3}
+                sx={{ mb: 2 }}
+              />
+              
+              <Button sx={{ mb: 2 }} fullWidth onClick={() => dispatch(expandCurrent())}>
                 {currentStep?.ext === undefined ?
-                  'Extend' : 'Short'
+                  'Add Duration & Body' : 'Remove Duration & Body'
                 }
               </Button>
-              </Collapse>
-            <Collapse in={currentStep?.ext !== undefined}>
-              <TextField sx={{ my: 1 }} multiline fullWidth label="Body" id="ext-step-body" defaultValue={currentStep?.ext?.body} slotProps={{ input: { readOnly: !editMode } }}/>
-              <TimeField sx={{ my: 1 }} label="Duration" defaultValue={parseTime(currentStep?.ext?.duration ?? 0)} format="HH:mm:ss"/>
-            </Collapse>
-          </AccordionDetails>
-        </Accordion>
-        <Fade in={editMode}>
-          <Button sx={{ my: 2 }} fullWidth onClick={() => {}}>
-            Update
-          </Button>
-        </Fade>
+              
+              {currentStep?.ext !== undefined && (
+                <Box sx={{ mt: 2, mb: 2 }}>
+                  <TextField 
+                    sx={{ mb: 2 }} 
+                    multiline 
+                    fullWidth 
+                    label="Step Body" 
+                    id="ext-step-body" 
+                    value={currentStep?.ext?.body || ''} 
+                    onChange={(e) => dispatch(setCurrent({ 
+                      ext: { 
+                        ...currentStep.ext!, 
+                        body: e.target.value 
+                      } 
+                    }))}
+                    rows={3}
+                  />
+                  <TimeField 
+                    sx={{ mb: 2 }} 
+                    label="Duration" 
+                    value={parseTime(currentStep?.ext?.duration ?? 0)} 
+                    format="HH:mm:ss"
+                    onChange={(newValue) => {
+                      if (newValue) {
+                        const duration = newValue.hour() * 3600 + newValue.minute() * 60 + newValue.second();
+                        dispatch(setCurrent({ 
+                          ext: { 
+                            ...currentStep.ext!, 
+                            duration 
+                          } 
+                        }));
+                      }
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+          </>
+        )}
       </Paper>
 
-      <Paper sx={{ width: '10vw', overflow: 'auto' }}>
-        <List subheader={
-          <ListSubheader>
-            <Box sx={{ textAlign: 'center' }}>
-              Children
-            </Box>
-            <Collapse in={editMode}>
-            <ButtonGroup>
-              <Tooltip title="Add new child from existing step">
-                <IconButton onClick={() => setDialOpen(true)}>
-                  <ShareIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Create new child">
-                <IconButton onClick={() => dispatch(appendStep({ title: 'New step', instruction: 'New beginning' }))}>
-                  <AddIcon />
-                </IconButton>
-              </Tooltip>
-            </ButtonGroup>
-            </Collapse>
-          </ListSubheader>
-        }>
-          <TransitionGroup>
-          {currentStep !== undefined ? 
-            children.map(child => 
-              <Collapse key={child.id}>
-              <ListItemButtonStep
-                status={child.status}
-                key={child.id}
-                onClick={() => dispatch(shiftCurrent(child.id))}
-              >
-                {child.title}
-              </ListItemButtonStep>
+      {editMode && (
+        <Paper sx={{ width: '10vw', overflow: 'auto' }}>
+          <List subheader={
+            <ListSubheader>
+              <Box sx={{ textAlign: 'center' }}>
+                Children
+              </Box>
+              <Collapse in={editMode}>
+              <ButtonGroup>
+                <Tooltip title="Add new child from existing step">
+                  <IconButton onClick={() => setDialOpen(true)}>
+                    <ShareIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Create new child">
+                  <IconButton onClick={() => dispatch(appendStep({ title: 'New step', instruction: 'New beginning' }))}>
+                    <AddIcon />
+                  </IconButton>
+                </Tooltip>
+              </ButtonGroup>
               </Collapse>
-            ) : ''
-          }
-          </TransitionGroup>
-        </List>
-      </Paper>
+            </ListSubheader>
+          }>
+            <TransitionGroup>
+            {currentStep !== undefined ? 
+              children.map(child => {
+                const relationId = getChildRelationId(child.id);
+                const isDeletable = relationId && deletableChildConnections.includes(relationId);
+                
+                return (
+                  <Collapse key={child.id}>
+                  <ListItemButtonStep
+                    status={child.status}
+                    key={child.id}
+                    onClick={() => dispatch(shiftCurrent(child.id))}
+                    deletable={!!(isDeletable && editMode)}
+                    onClickDelete={() => handleDeleteChildConnection(child.id)}
+                  >
+                    {child.title}
+                  </ListItemButtonStep>
+                  </Collapse>
+                );
+              }) : ''
+            }
+            </TransitionGroup>
+          </List>
+        </Paper>
+      )}
       <Dialog
         open={dialOpen}
       >
@@ -272,7 +358,6 @@ function Editor() {
         <DialogActions>
           <Button onClick={() => setDialOpen(false)}>Cancel</Button>
           <Button onClick={() => {
-            // console.log(selected)
             dispatch(createConn({ parentId: currentStep?.id, childId: selectedStepId }))
             setDialOpen(false);
           }}>Ok</Button>

@@ -1,12 +1,25 @@
 import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit";
-import { hasCycle, isDescendant } from "../utils/graph";
+import { hasCycle, isDescendant, canDeleteConnection, getDeletableConnections } from "../utils/graph";
 import { selectLogin } from "./authSlice";
+import type { RootState } from "../store";
 
 export type ChangeStatus = 
 | 'created'
 | 'modified'
 | 'deleted'
 | 'untouched';
+
+export type PlayStatus = 
+| 'idle'
+| 'playing'
+| 'paused'
+| 'completed';
+
+export type StepExecutionStatus = 
+| 'waiting'
+| 'active'
+| 'completed'
+| 'skipped';
 
 const generateTempId = () => String(new Date().getTime());
 
@@ -49,12 +62,24 @@ type RecipeState = {
   recipe: Recipe | null;
   error: string | null;
   loading: boolean;
+  playMode: {
+    status: PlayStatus;
+    activeSteps: { [stepId: string]: StepExecutionStatus };
+    completedSteps: { [stepId: string]: boolean };
+    stepTimers: { [stepId: string]: { startTime: number; duration: number } };
+  };
 }
 
 const initialState = {
   recipe: null,
   error: null,
   loading: true,
+  playMode: {
+    status: 'idle',
+    activeSteps: {},
+    completedSteps: {},
+    stepTimers: {},
+  },
 } satisfies RecipeState as RecipeState;
 
 export const downloadRecipe = createAsyncThunk(
@@ -158,6 +183,18 @@ const recipeSlice = createSlice({
         return;
       }
 
+      // Check if the connection can be deleted
+      const canDelete = canDeleteConnection(
+        Object.values(state.recipe.steps),
+        state.recipe.relations,
+        id,
+        state.recipe.rootStepId
+      );
+
+      if (!canDelete) {
+        return; // Don't delete if it's not allowed
+      }
+
       if (state.recipe.relations[id].status !== 'created') {
         state.recipe.relations[id].status = 'deleted';
       } else {
@@ -236,7 +273,138 @@ const recipeSlice = createSlice({
       }
 
       state.recipe = { ...state.recipe, ...action.payload };
-    }
+    },
+    startPlayMode: (state) => {
+      if (state.recipe === null) {
+        return;
+      }
+
+      // Reset play mode state
+      state.playMode.status = 'playing';
+      state.playMode.activeSteps = {};
+      state.playMode.completedSteps = {};
+      state.playMode.stepTimers = {};
+
+      // Find all steps that have no parents (root steps)
+      const rootSteps = Object.values(state.recipe!.steps).filter(step => {
+        const hasParents = Object.values(state.recipe!.relations).some(rel => rel.childId === step.id);
+        return !hasParents;
+      });
+
+      // Activate root steps
+      rootSteps.forEach(step => {
+        state.playMode.activeSteps[step.id] = 'active';
+        if (step.ext?.duration) {
+          state.playMode.stepTimers[step.id] = {
+            startTime: Date.now(),
+            duration: step.ext.duration * 1000 // Convert to milliseconds
+          };
+        }
+      });
+    },
+    pausePlayMode: (state) => {
+      state.playMode.status = 'paused';
+    },
+    resumePlayMode: (state) => {
+      state.playMode.status = 'playing';
+    },
+    stopPlayMode: (state) => {
+      state.playMode.status = 'idle';
+      state.playMode.activeSteps = {};
+      state.playMode.completedSteps = {};
+      state.playMode.stepTimers = {};
+    },
+    completeStep: (state, action) => {
+      const stepId = action.payload;
+      
+      if (state.recipe === null || state.playMode.status !== 'playing') {
+        return;
+      }
+
+      // Mark step as completed
+      state.playMode.activeSteps[stepId] = 'completed';
+      state.playMode.completedSteps[stepId] = true;
+      delete state.playMode.stepTimers[stepId];
+
+      // Find child steps that can now be activated
+      const childRelations = Object.values(state.recipe!.relations).filter(rel => rel.parentId === stepId);
+      
+      childRelations.forEach(relation => {
+        const childId = relation.childId;
+        const childStep = state.recipe!.steps[childId];
+        
+        if (!childStep) return;
+
+        // Check if all parents of this child are completed
+        const childParentRelations = Object.values(state.recipe!.relations).filter(rel => rel.childId === childId);
+        const allParentsCompleted = childParentRelations.every(rel => 
+          state.playMode.completedSteps[rel.parentId]
+        );
+
+        if (allParentsCompleted && !state.playMode.completedSteps[childId]) {
+          state.playMode.activeSteps[childId] = 'active';
+          if (childStep.ext?.duration) {
+            state.playMode.stepTimers[childId] = {
+              startTime: Date.now(),
+              duration: childStep.ext.duration * 1000
+            };
+          }
+        }
+      });
+
+      // Check if all steps are completed
+      const allStepsCompleted = Object.values(state.recipe!.steps).every(step => 
+        state.playMode.completedSteps[step.id]
+      );
+
+      if (allStepsCompleted) {
+        state.playMode.status = 'completed';
+      }
+    },
+    skipStep: (state, action) => {
+      const stepId = action.payload;
+      
+      if (state.recipe === null || state.playMode.status !== 'playing') {
+        return;
+      }
+
+      state.playMode.activeSteps[stepId] = 'skipped';
+      state.playMode.completedSteps[stepId] = true;
+      delete state.playMode.stepTimers[stepId];
+
+      // Same logic as completeStep for activating children
+      const childRelations = Object.values(state.recipe!.relations).filter(rel => rel.parentId === stepId);
+      
+      childRelations.forEach(relation => {
+        const childId = relation.childId;
+        const childStep = state.recipe!.steps[childId];
+        
+        if (!childStep) return;
+
+        const childParentRelations = Object.values(state.recipe!.relations).filter(rel => rel.childId === childId);
+        const allParentsCompleted = childParentRelations.every(rel => 
+          state.playMode.completedSteps[rel.parentId]
+        );
+
+        if (allParentsCompleted && !state.playMode.completedSteps[childId]) {
+          state.playMode.activeSteps[childId] = 'active';
+          if (childStep.ext?.duration) {
+            state.playMode.stepTimers[childId] = {
+              startTime: Date.now(),
+              duration: childStep.ext.duration * 1000
+            };
+          }
+        }
+      });
+
+      const allStepsCompleted = Object.values(state.recipe!.steps).every(step => 
+        state.playMode.completedSteps[step.id]
+      );
+
+      if (allStepsCompleted) {
+        state.playMode.status = 'completed';
+      }
+    },
   },
   selectors: {
     selectRecipe: (state) => {
@@ -291,6 +459,80 @@ const recipeSlice = createSlice({
         !isDescendant(steps, rels, currentStepId, step.id)
       );
     },
+    selectDeletableConnections: (state) => {
+      if (state.recipe === null) {
+        return [];
+      }
+
+      const currentStepId = state.recipe.currentStepId;
+      
+      return getDeletableConnections(
+        Object.values(state.recipe.steps),
+        state.recipe.relations,
+        currentStepId,
+        state.recipe.rootStepId
+      );
+    },
+    selectDeletableParentConnections: (state) => {
+      if (state.recipe === null) {
+        return [];
+      }
+
+      const currentStepId = state.recipe.currentStepId;
+      const parentConnections = Object.entries(state.recipe.relations)
+        .filter(([_, rel]) => rel.childId === currentStepId)
+        .map(([id, _]) => id);
+
+      return parentConnections.filter(relationId => 
+        canDeleteConnection(
+          Object.values(state.recipe!.steps),
+          state.recipe!.relations,
+          relationId,
+          state.recipe!.rootStepId
+        )
+      );
+    },
+    selectDeletableChildConnections: (state) => {
+      if (state.recipe === null) {
+        return [];
+      }
+
+      const currentStepId = state.recipe.currentStepId;
+      const childConnections = Object.entries(state.recipe.relations)
+        .filter(([_, rel]) => rel.parentId === currentStepId)
+        .map(([id, _]) => id);
+
+      return childConnections.filter(relationId => 
+        canDeleteConnection(
+          Object.values(state.recipe!.steps),
+          state.recipe!.relations,
+          relationId,
+          state.recipe!.rootStepId
+        )
+      );
+    },
+    selectPlayModeStatus: (state) => {
+      return state.playMode.status;
+    },
+    selectActiveSteps: (state) => {
+      return state.playMode.activeSteps;
+    },
+    selectCompletedSteps: (state) => {
+      return state.playMode.completedSteps;
+    },
+    selectStepTimers: (state) => {
+      return state.playMode.stepTimers;
+    },
+    selectActiveStepsList: (state) => {
+      if (state.recipe === null) {
+        return [];
+      }
+
+      return Object.entries(state.playMode.activeSteps)
+        .filter(([_, status]) => status === 'active')
+        .map(([stepId, _]) => state.recipe!.steps[stepId])
+        .filter(Boolean);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -323,6 +565,12 @@ export const {
   expandCurrent,
   setCurrent,
   setRecipe,
+  startPlayMode,
+  pausePlayMode,
+  resumePlayMode,
+  stopPlayMode,
+  completeStep,
+  skipStep,
 } = recipeSlice.actions;
 
 export const {  
@@ -331,6 +579,14 @@ export const {
   selectChildrenOfCurrent,
   selectParentsOfCurrent,
   selectPossibleChildren,
+  selectDeletableConnections,
+  selectDeletableParentConnections,
+  selectDeletableChildConnections,
+  selectPlayModeStatus,
+  selectActiveSteps,
+  selectCompletedSteps,
+  selectStepTimers,
+  selectActiveStepsList,
 } = recipeSlice.selectors;
 
 export const selectIsUserOwner = createSelector(
