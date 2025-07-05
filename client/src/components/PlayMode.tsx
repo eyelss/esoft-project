@@ -6,10 +6,8 @@ import StopIcon from '@mui/icons-material/Stop';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import { 
-  selectPlayModeStatus, 
-  selectActiveSteps, 
-  selectCompletedSteps, 
-  selectStepTimers,
+  selectPlayModeStatus,
+  selectCompletedSteps,
   selectActiveStepsList,
   selectRecipe,
   startPlayMode,
@@ -17,28 +15,27 @@ import {
   resumePlayMode,
   stopPlayMode,
   completeStep,
-  skipStep
+  skipStep,
+  type Step
 } from "../features/recipeSlice";
 import { useAppDispatch } from "../store";
 import StepTimer from "./StepTimer";
 import { useState, useRef, useEffect } from 'react';
 
+type Timer = {
+  startTime: number;
+  accumulatedPause: number;
+  pauseStart: number | null;
+  isCompleted: boolean;
+};
+
 const PlayMode = () => {
   const dispatch = useAppDispatch();
   const playStatus = useSelector(selectPlayModeStatus);
-  const activeSteps = useSelector(selectActiveSteps);
   const completedSteps = useSelector(selectCompletedSteps);
-  const stepTimers = useSelector(selectStepTimers);
   const activeStepsList = useSelector(selectActiveStepsList);
   const recipe = useSelector(selectRecipe);
-  const [timers, setTimers] = useState<{
-    [stepId: string]: {
-      startTime: number;
-      accumulatedPause: number;
-      pauseStart: number | null;
-      isCompleted: boolean;
-    }
-  }>({});
+  const [timers, setTimers] = useState<{ [stepId: string]: Timer }>({});
   const intervalRef = useRef<number | null>(null);
   const timersRef = useRef(timers);
 
@@ -125,7 +122,7 @@ const PlayMode = () => {
       return;
     }
     intervalRef.current = window.setInterval(() => {
-      setTimers(prevTimers => {
+      setTimers(() => {
         const updated = { ...timersRef.current };
         Object.keys(updated).forEach(stepId => {
           const timer = updated[stepId];
@@ -149,7 +146,7 @@ const PlayMode = () => {
   }, [playStatus, activeStepsList]);
 
   // Helper function to render a timer step
-  const renderTimerStep = (step: any, timer: any, timeLeft: number) => {
+  const renderTimerStep = (step: Step, timer: Timer, timeLeft: number) => {
     if (!step.ext) return null;
     const { duration, body } = step.ext;
     return (
@@ -295,7 +292,7 @@ const PlayMode = () => {
                 );
               }
               if (!step.ext) return null;
-              const { duration, body } = step.ext;
+              const { duration } = step.ext;
               // Calculate timeLeft for this timer
               const elapsed = Math.floor((Date.now() - timer.startTime - timer.accumulatedPause) / 1000);
               const timeLeft = Math.max(0, duration - elapsed);
@@ -362,7 +359,7 @@ const PlayMode = () => {
                 <Chip 
                   key={stepId} 
                   label={stepTitle}
-                  color="success" 
+                  color="success"
                   variant="outlined"
                 />
               );

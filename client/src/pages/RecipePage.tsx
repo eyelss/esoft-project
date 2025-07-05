@@ -133,7 +133,6 @@ function Editor() {
   const deletableParentConnections = useSelector(selectDeletableParentConnections);
   const deletableChildConnections = useSelector(selectDeletableChildConnections);
   const recipe = useSelector(selectRecipe);
-  const playModeStatus = useSelector(selectPlayModeStatus);
   const { title, description, status } = recipe || {};
   const isOwning = useSelector(selectIsUserOwner);
   const [dialOpen, setDialOpen] = useState(false);
