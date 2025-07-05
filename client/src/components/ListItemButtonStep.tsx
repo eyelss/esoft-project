@@ -1,32 +1,50 @@
-import { ListItemButton } from "@mui/material";
+import { Badge, IconButton, ListItem, ListItemButton } from "@mui/material";
 import type React from "react";
-import type { PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 import type { ChangeStatus } from "../features/recipeSlice";
+import DeleteIcon from '@mui/icons-material/Delete';
+
 
 type Props = {
   key?: string;
   status: ChangeStatus;
   onClick?: React.MouseEventHandler<HTMLDivElement>,
+  onClickDelete?: React.MouseEventHandler<HTMLButtonElement>
+  deletable?: boolean;
 }
 
-const mappedColor: Record<ChangeStatus, string> = {
-  created: 'green',
-  modified: 'yellow',
-  deleted: 'red',
-  untouched: ''
-}
+const ListItemButtonStep = ({ children, key, onClick, status, deletable, onClickDelete }: PropsWithChildren<Props>) => {
 
-const ListItemButtonStep = ({ children, key, onClick, status }: PropsWithChildren<Props>) => {
   return (
+    <ListItem sx={{ p: 0 }} secondaryAction={deletable && 
+      <IconButton edge="end" aria-label="delete" onClick={onClickDelete}>
+        <DeleteIcon/>
+      </IconButton>
+    }>
     <ListItemButton
       key={key}
       onClick={onClick}
-      sx={{
-        backgroundColor: mappedColor[status],
+      sx={{ 
+        whiteSpace: 'normal',
+        alignItems: 'flex-start',
       }}
     >
-      {children}
+      <Badge 
+        variant="dot" 
+        invisible={status === 'untouched'}
+        color={
+          status === 'created' ? 'success' :
+          status === 'modified' ? 'warning' :
+          status === 'deleted' ? 'error' : 'default'
+        } 
+        anchorOrigin={{
+          horizontal: 'left',
+        }}
+      >
+        {children}
+      </Badge>
     </ListItemButton>
+    </ListItem>
   );
 }
 

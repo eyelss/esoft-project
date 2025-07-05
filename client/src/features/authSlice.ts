@@ -77,8 +77,9 @@ const authSlice = createSlice({
   },
   selectors: {
     selectUser: (state) => state.user,
+    selectLogin: (state) => state.user?.login,
   },
 });
 
-export const { selectUser } = authSlice.selectors;
+export const { selectUser, selectLogin } = authSlice.selectors;
 export default authSlice.reducer;

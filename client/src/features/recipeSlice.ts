@@ -1,5 +1,6 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit";
 import { hasCycle, isDescendant } from "../utils/graph";
+import { selectLogin } from "./authSlice";
 
 export type ChangeStatus = 
 | 'created'
@@ -12,8 +13,14 @@ const generateTempId = () => String(new Date().getTime());
 export type Step = {
   id: string;
   title: string;
-  description?: string;
+  instruction: string;
   status: ChangeStatus;
+  ext?: StepExt;
+};
+
+type StepExt = {
+  body: string;
+  duration: number;
 };
 
 export type Relation = {
@@ -27,6 +34,7 @@ type Recipe = {
   id: string;
   title: string;
   description: string;
+  owner: string;
 
   status: ChangeStatus;
   currentStepId: string;
@@ -49,8 +57,8 @@ const initialState = {
   loading: true,
 } satisfies RecipeState as RecipeState;
 
-export const loadRecipe = createAsyncThunk(
-  'recipe/loadRecipe',
+export const downloadRecipe = createAsyncThunk(
+  'recipe/downloadRecipe',
   async ( id: string, { rejectWithValue } ) => {
     const response = await fetch(`/api/recipes/${id}`);
 
@@ -76,6 +84,7 @@ const recipeSlice = createSlice({
       state.recipe.steps[id] = {
         id,
         title: action.payload,
+        instruction: 'New instruction',
         status: 'created',
       };
     },
@@ -110,13 +119,14 @@ const recipeSlice = createSlice({
         return;
       }
 
-      const title = action.payload;
+      const { title, instruction } = action.payload;
       
       const stepId = generateTempId();
 
       state.recipe.steps[stepId] = {
         id: stepId,
         title,
+        instruction,
         status: 'created',
       };
 
@@ -154,23 +164,23 @@ const recipeSlice = createSlice({
         delete state.recipe.relations[id];
       }
     },
-    createEmpty: (state) => {
+    createEmpty: (state, action) => {
       state.loading = false;
       state.error = null;
       
       const stepId = generateTempId()
       const root: Step = {
         id: stepId,
-        title: 'New step',
+        title: 'Root step',
+        instruction: 'Write your step instructions!',
         status: 'created',
       }
 
-
       state.recipe = {
         id: generateTempId(),
+        owner: action.payload,
         title: 'New recipe',
         description: 'Description of your recipe',
-
         status: 'created',
         currentStepId: stepId,
         rootStepId: stepId,
@@ -192,11 +202,45 @@ const recipeSlice = createSlice({
       if (newCurrentStepId !== undefined) {
         state.recipe.currentStepId = newCurrentStepId;
       }
+    },
+    expandCurrent: (state) => {
+      if (state.recipe === null) {
+        return;
+      }
+
+      const currentStep = state.recipe.steps[state.recipe.currentStepId];
+
+      
+      if (currentStep.ext === undefined) {
+        currentStep.ext = {
+          body: '',
+          duration: 0,
+        }
+      } else {
+        currentStep.ext = undefined;
+      }
+    },
+    setCurrent: (state, action) => {
+      if (state.recipe === null) {
+        return;
+      }
+
+      const currentId = state.recipe.currentStepId;
+      const currentStep = state.recipe.steps[currentId];
+      
+      state.recipe.steps[currentId] = { ...currentStep, ...action.payload };
+    },
+    setRecipe: (state, action) => {
+      if (state.recipe === null) {
+        return;
+      }
+
+      state.recipe = { ...state.recipe, ...action.payload };
     }
   },
   selectors: {
-    selectRecipeContent: (state): [string | undefined, string | undefined , ChangeStatus | undefined] => {
-      return [state.recipe?.title, state.recipe?.description, state.recipe?.status];
+    selectRecipe: (state) => {
+      return state.recipe;
     },
     selectCurrentStep: (state) => {
       if (state.recipe === null) {
@@ -250,22 +294,22 @@ const recipeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadRecipe.pending, (state) => {
+      .addCase(downloadRecipe.pending, (state) => {
         state.loading = true;
         state.recipe = null;
       })
-      .addCase(loadRecipe.rejected, (state, action) => {
+      .addCase(downloadRecipe.rejected, (state, action) => {
         state.loading = false;
         state.recipe = null;
         state.error = action.payload as string;
       })
-      .addCase(loadRecipe.fulfilled, (state, action) => {
+      .addCase(downloadRecipe.fulfilled, (state, action) => {
         state.loading = false;
         state.recipe = action.payload;
         state.error = null;
       });
   }
-})
+});
 
 export const { 
   createStep,
@@ -276,14 +320,22 @@ export const {
   deleteConn,
   createEmpty,
   shiftCurrent,
+  expandCurrent,
+  setCurrent,
+  setRecipe,
 } = recipeSlice.actions;
 
 export const {  
-  selectRecipeContent,
+  selectRecipe,
   selectCurrentStep,
   selectChildrenOfCurrent,
   selectParentsOfCurrent,
   selectPossibleChildren,
 } = recipeSlice.selectors;
+
+export const selectIsUserOwner = createSelector(
+  [selectLogin, selectRecipe],
+  (login, recipe) => login === recipe?.owner,
+);
 
 export default recipeSlice.reducer;

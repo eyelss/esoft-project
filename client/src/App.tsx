@@ -10,6 +10,8 @@ import { Container } from '@mui/material';
 import RouterContext from './components/RouterContext';
 import { verifySession } from './features/authSlice';
 import { useAppDispatch } from './store';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 function App() {
   const currentTheme = useSelector(selectTheme);
@@ -27,6 +29,7 @@ function App() {
 
   return (
     <Router>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeProvider theme={theme}>
       <RouterContext
         onRouteChange={() => {
@@ -36,9 +39,9 @@ function App() {
         <CssBaseline />
         <Layout>
           <Container
-            maxWidth="lg"
+            maxWidth="xl"
             component="main"
-            sx={{ display: 'flex', flexDirection: 'column', my: 16, gap: 4 }}
+            sx={{ display: 'flex', flexDirection: 'column', my: 8, gap: 2 }}
           >
             <Routes>
               {Object.values(routes).map(route =>
@@ -53,6 +56,7 @@ function App() {
         </Layout>
       </RouterContext>
       </ThemeProvider>
+      </LocalizationProvider>
     </Router>
   );
 }

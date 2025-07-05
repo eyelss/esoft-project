@@ -51,10 +51,6 @@ model Step {
 
   recipe          Recipe?
 
-  // UI reactflow coordinates (it's too hard to generate this values from their hierarchy)
-  x               Int
-  y               Int
-
   title           String
   description     String?
 
@@ -72,7 +68,6 @@ model StepExtension {
 
   body            String
   duration        Int
-  epilogue        String
 
   @@map("step_extensions")
 }
