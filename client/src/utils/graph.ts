@@ -65,7 +65,7 @@ export const canDeleteConnection = (
   const relation = relations[relationId];
   if (!relation) return false;
 
-  const { parentId, childId } = relation;
+  const { childId } = relation;
   const relsArray = Object.values(relations);
 
   // Cannot delete if this is the only connection to the root step

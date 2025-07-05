@@ -1,27 +1,131 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent, Skeleton, Alert } from "@mui/material";
 import { useAppDispatch } from "../store";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from '@mui/icons-material/Remove';
 import ShareIcon from "@mui/icons-material/Share"
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SaveIcon from '@mui/icons-material/Save';
-import FeedIcon from '@mui/icons-material/Feed';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus } from "../features/recipeSlice";
+import HomeIcon from '@mui/icons-material/Home';
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError } from "../features/recipeSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
 import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 
+// Loading Skeleton Components
+const RecipeSkeleton = () => (
+  <Box sx={{ p: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Skeleton variant="text" width={300} height={40} />
+      <Skeleton variant="rectangular" width={120} height={40} />
+    </Box>
+    
+    <Paper sx={{ p: 2, mb: 2 }}>
+      <Skeleton variant="text" width="100%" height={32} sx={{ mb: 2 }} />
+      <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
+      <Skeleton variant="text" width="80%" height={24} sx={{ mb: 1 }} />
+      <Skeleton variant="text" width="40%" height={24} />
+    </Paper>
+    
+    <Accordion>
+      <AccordionSummary>
+        <Skeleton variant="text" width={150} height={32} />
+      </AccordionSummary>
+      <AccordionDetails>
+        <Skeleton variant="text" width="100%" height={20} sx={{ mb: 1 }} />
+        <Skeleton variant="text" width="90%" height={20} sx={{ mb: 1 }} />
+        <Skeleton variant="text" width="70%" height={20} />
+      </AccordionDetails>
+    </Accordion>
+  </Box>
+);
+
+const EditModeSkeleton = () => (
+  <Box sx={{ display: 'flex', height: '100vh', gap: 1 }}>
+    <Paper sx={{ width: '10vw', overflow: 'auto' }}>
+      <List subheader={<ListSubheader>Parents</ListSubheader>}>
+        <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
+        <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
+        <Skeleton variant="rectangular" width="80%" height={48} />
+      </List>
+    </Paper>
+
+    <Paper sx={{ flex: 1 }}>
+      <Box sx={{ m: 1 }}>
+        <Skeleton variant="text" width={200} height={32} />
+      </Box>
+      
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Skeleton variant="text" width="100%" height={56} sx={{ mb: 2 }} />
+        <Skeleton variant="text" width="100%" height={80} />
+      </Box>
+      
+      <Box sx={{ p: 2 }}>
+        <Skeleton variant="text" width={150} height={32} sx={{ mb: 2 }} />
+        <Skeleton variant="text" width="100%" height={56} sx={{ mb: 2 }} />
+        <Skeleton variant="text" width="100%" height={80} sx={{ mb: 2 }} />
+        <Skeleton variant="rectangular" width="100%" height={40} sx={{ mb: 2 }} />
+      </Box>
+    </Paper>
+
+    <Paper sx={{ width: '10vw', overflow: 'auto' }}>
+      <List subheader={<ListSubheader>Children</ListSubheader>}>
+        <Skeleton variant="rectangular" width="100%" height={48} sx={{ mb: 1 }} />
+        <Skeleton variant="rectangular" width="90%" height={48} sx={{ mb: 1 }} />
+        <Skeleton variant="rectangular" width="85%" height={48} />
+      </List>
+    </Paper>
+  </Box>
+);
+
+// Error Component
+const RecipeNotFound = ({ recipeId }: { recipeId: string }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      height: '100vh',
+      p: 3
+    }}>
+      <Alert severity="error" sx={{ mb: 3, maxWidth: 600 }}>
+        <Typography variant="h5" gutterBottom>
+          Recipe Not Found
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          The recipe with ID "{recipeId}" could not be found. It may have been deleted or you may not have permission to access it.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<HomeIcon />}
+            onClick={() => navigate('/')}
+          >
+            Go Home
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/recipe')}
+          >
+            Create New Recipe
+          </Button>
+        </Box>
+      </Alert>
+    </Box>
+  );
+};
+
 function Editor() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const currentStep = useSelector(selectCurrentStep);
   const children = useSelector(selectChildrenOfCurrent);
   const parents = useSelector(selectParentsOfCurrent);
@@ -39,6 +143,10 @@ function Editor() {
 
   const params = useParams();
 
+  // Get loading and error states from Redux
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+
   useEffect(() => {
     if (params.recipeId === undefined) {
       if (status !== 'created') {
@@ -49,6 +157,52 @@ function Editor() {
     }
     
   }, [params.recipeId, status, dispatch]);
+
+  // Show loading skeleton
+  if (loading) {
+    return editMode ? <EditModeSkeleton /> : <RecipeSkeleton />;
+  }
+
+  // Show error for 404 or other errors
+  if (error && params.recipeId) {
+    if (String(error) === '404') {
+      return <RecipeNotFound recipeId={params.recipeId} />;
+    }
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        p: 3
+      }}>
+        <Alert severity="error" sx={{ mb: 3, maxWidth: 600 }}>
+          <Typography variant="h5" gutterBottom>
+            Error Loading Recipe
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            An error occurred while loading the recipe. Please try again.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<HomeIcon />}
+              onClick={() => navigate('/')}
+            >
+              Go Home
+            </Button>
+          </Box>
+        </Alert>
+      </Box>
+    );
+  }
 
   // Helper function to find relation ID for a parent connection
   const getParentRelationId = (parentId: string) => {

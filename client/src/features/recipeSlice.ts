@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit";
 import { hasCycle, isDescendant, canDeleteConnection, getDeletableConnections } from "../utils/graph";
 import { selectLogin } from "./authSlice";
-import type { RootState } from "../store";
 
 export type ChangeStatus = 
 | 'created'
@@ -410,6 +409,12 @@ const recipeSlice = createSlice({
     selectRecipe: (state) => {
       return state.recipe;
     },
+    selectLoading: (state) => {
+      return state.loading;
+    },
+    selectError: (state) => {
+      return state.error;
+    },
     selectCurrentStep: (state) => {
       if (state.recipe === null) {
         return null;
@@ -575,6 +580,8 @@ export const {
 
 export const {  
   selectRecipe,
+  selectLoading,
+  selectError,
   selectCurrentStep,
   selectChildrenOfCurrent,
   selectParentsOfCurrent,
