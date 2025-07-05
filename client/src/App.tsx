@@ -7,7 +7,6 @@ import { selectTheme } from './features/themeSlice';
 import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom';
 import routes, { drainRoute } from './pages/routes';
 import { Container } from '@mui/material';
-import RouterContext from './components/RouterContext';
 import { verifySession } from './features/authSlice';
 import { useAppDispatch } from './store';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';

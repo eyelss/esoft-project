@@ -42,7 +42,7 @@ export type Relation = {
   childId: string;
 }
 
-type Recipe = {
+export type Recipe = {
   id: string;
   title: string;
   description: string;
