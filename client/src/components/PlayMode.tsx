@@ -21,6 +21,7 @@ import {
 } from "../features/recipeSlice";
 import { useAppDispatch } from "../store";
 import StepTimer from "./StepTimer";
+import { useState } from 'react';
 
 const PlayMode = () => {
   const dispatch = useAppDispatch();
@@ -30,6 +31,7 @@ const PlayMode = () => {
   const stepTimers = useSelector(selectStepTimers);
   const activeStepsList = useSelector(selectActiveStepsList);
   const recipe = useSelector(selectRecipe);
+  const [startedTimers, setStartedTimers] = useState<{ [stepId: string]: number }>({});
 
   const handleStart = () => {
     dispatch(startPlayMode());
@@ -147,18 +149,49 @@ const PlayMode = () => {
           </Typography>
           
           {activeStepsList.map(step => {
-            const hasTimer = step.ext?.duration && stepTimers[step.id];
-            
-            if (hasTimer) {
-              const timer = stepTimers[step.id];
+            if (step.ext?.duration) {
+              const timerStarted = startedTimers[step.id] !== undefined;
+              if (!timerStarted) {
+                return (
+                  <Box key={step.id} sx={{
+                    p: 2,
+                    border: 1,
+                    borderColor: 'primary.main',
+                    borderRadius: 2,
+                    mb: 2,
+                    backgroundColor: 'background.paper',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6">{step.title}</Typography>
+                      <Typography variant="body2" color="text.secondary">{step.instruction}</Typography>
+                      {step.ext?.body && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                          {step.ext.body}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => setStartedTimers(t => ({ ...t, [step.id]: Date.now() }))}
+                      sx={{ ml: 2 }}
+                    >
+                      Start
+                    </Button>
+                  </Box>
+                );
+              }
               return (
                 <StepTimer
                   key={step.id}
                   stepId={step.id}
                   title={step.title}
-                  duration={step.ext!.duration}
-                  startTime={timer.startTime}
-                  body={step.ext!.body}
+                  duration={step.ext.duration}
+                  startTime={startedTimers[step.id]}
+                  body={step.ext.body}
                   onComplete={handleCompleteStep}
                   onSkip={handleSkipStep}
                 />
