@@ -31,11 +31,6 @@ function App() {
     <Router>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeProvider theme={theme}>
-      <RouterContext
-        onRouteChange={() => {
-          dispatch(verifySession());
-        }}
-      >
         <CssBaseline />
         <Layout>
           <Container
@@ -54,7 +49,6 @@ function App() {
             </Routes>
           </Container>
         </Layout>
-      </RouterContext>
       </ThemeProvider>
       </LocalizationProvider>
     </Router>
