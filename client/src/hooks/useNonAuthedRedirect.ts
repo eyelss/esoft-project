@@ -10,6 +10,8 @@ const useNonAuthedRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    dispatch(verifySession());
+
     if (user === null) {
       navigate(routes[nonAuthDrain].pathUrl);
     }

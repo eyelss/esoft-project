@@ -11,11 +11,13 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
 import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError } from "../features/recipeSlice";
+import { selectUser } from "../features/authSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
 import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
+import useRecipeAuth from "../hooks/useRecipeAuth";
 
 // Loading Skeleton Components
 const RecipeSkeleton = () => (
@@ -145,6 +147,11 @@ function Editor() {
   // Get loading and error states from Redux
   const loading = useSelector(selectLoading);
   const error = useSelector(selectError);
+  
+  // Get user authentication status
+  const user = useSelector(selectUser);
+
+  useRecipeAuth();
 
   useEffect(() => {
     if (params.recipeId === undefined) {
@@ -156,6 +163,13 @@ function Editor() {
     }
     
   }, [params.recipeId, status, dispatch]);
+
+  // Prevent non-authenticated users from accessing edit mode
+  useEffect(() => {
+    if (editMode && !user) {
+      setEditMode(false);
+    }
+  }, [editMode, user]);
 
   // Show loading skeleton
   if (loading) {
@@ -289,13 +303,15 @@ function Editor() {
               <Typography variant="h5">
                 {title || 'Recipe Title'}
               </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<EditIcon />}
-                onClick={() => setEditMode(true)}
-              >
-                Edit Recipe
-              </Button>
+              {user && (
+                <Button
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={() => setEditMode(true)}
+                >
+                  Edit Recipe
+                </Button>
+              )}
             </Box>
             
             <PlayMode />

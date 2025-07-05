@@ -27,6 +27,10 @@ function App() {
     localStorage.setItem('theme', currentTheme);
   }, [currentTheme]);
 
+  useEffect(() => {
+    dispatch(verifySession());
+  }, [dispatch])
+
   return (
     <Router>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
