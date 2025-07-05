@@ -92,18 +92,6 @@ function Editor() {
               Play
             </Link>
           }
-          {!isOwning &&
-            <Link
-              underline="hover"
-              sx={{ display: 'flex', alignItems: 'center' }}
-              color="inherit"
-              component="button"
-              onClick={() => {}}
-            >
-              <ContentCopyIcon sx={{ mr: .6 }} fontSize="inherit"/>
-              Fork
-            </Link>
-          }
           { !editMode &&
             <Link
               underline="hover"
