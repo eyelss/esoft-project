@@ -21,7 +21,7 @@ import {
 } from "../features/recipeSlice";
 import { useAppDispatch } from "../store";
 import StepTimer from "./StepTimer";
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const PlayMode = () => {
   const dispatch = useAppDispatch();
@@ -31,17 +31,51 @@ const PlayMode = () => {
   const stepTimers = useSelector(selectStepTimers);
   const activeStepsList = useSelector(selectActiveStepsList);
   const recipe = useSelector(selectRecipe);
-  const [startedTimers, setStartedTimers] = useState<{ [stepId: string]: number }>({});
+  const [timers, setTimers] = useState<{
+    [stepId: string]: {
+      startTime: number;
+      accumulatedPause: number;
+      pauseStart: number | null;
+      isCompleted: boolean;
+    }
+  }>({});
+  const intervalRef = useRef<number | null>(null);
+  const timersRef = useRef(timers);
+
+  // Keep timersRef in sync with timers state
+  useEffect(() => {
+    timersRef.current = timers;
+  }, [timers]);
 
   const handleStart = () => {
+    resetTimers();
     dispatch(startPlayMode());
   };
 
   const handlePause = () => {
+    setTimers(t => {
+      const updated = { ...t };
+      Object.keys(updated).forEach(stepId => {
+        if (!updated[stepId].isCompleted && updated[stepId].pauseStart === null) {
+          updated[stepId].pauseStart = Date.now();
+        }
+      });
+      return updated;
+    });
     dispatch(pausePlayMode());
   };
 
   const handleResume = () => {
+    setTimers(t => {
+      const updated = { ...t };
+      Object.keys(updated).forEach(stepId => {
+        if (!updated[stepId].isCompleted && updated[stepId].pauseStart !== null) {
+          updated[stepId].accumulatedPause += Date.now() - updated[stepId].pauseStart!;
+          updated[stepId].pauseStart = null;
+        }
+      });
+      return updated;
+    });
     dispatch(resumePlayMode());
   };
 
@@ -60,6 +94,80 @@ const PlayMode = () => {
   const isPlaying = playStatus === 'playing';
   const isPaused = playStatus === 'paused';
   const isCompleted = playStatus === 'completed';
+
+  // Helper to initialize timer for a step
+  const initTimer = (stepId: string) => {
+    setTimers(t => ({
+      ...t,
+      [stepId]: {
+        startTime: Date.now(),
+        accumulatedPause: 0,
+        pauseStart: null,
+        isCompleted: false,
+      }
+    }));
+  };
+
+  // Start timer for a step
+  const handleStartTimer = (stepId: string) => {
+    initTimer(stepId);
+  };
+
+  // Reset all timers (for replay)
+  const resetTimers = () => {
+    setTimers({});
+  };
+
+  // Timer ticking effect
+  useEffect(() => {
+    if (playStatus !== 'playing') {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+    intervalRef.current = window.setInterval(() => {
+      setTimers(prevTimers => {
+        const updated = { ...timersRef.current };
+        Object.keys(updated).forEach(stepId => {
+          const timer = updated[stepId];
+          if (!timer.isCompleted && timer.pauseStart === null) {
+            // Find the step to get its duration
+            const step = activeStepsList.find(s => s.id === stepId);
+            const duration = step?.ext?.duration || 0;
+            const elapsed = Math.floor((Date.now() - timer.startTime - timer.accumulatedPause) / 1000);
+            const timeLeft = Math.max(0, duration - elapsed);
+            if (timeLeft === 0) {
+              updated[stepId].isCompleted = true;
+            }
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [playStatus, activeStepsList]);
+
+  // Helper function to render a timer step
+  const renderTimerStep = (step: any, timer: any, timeLeft: number) => {
+    if (!step.ext) return null;
+    const { duration, body } = step.ext;
+    return (
+      <StepTimer
+        key={step.id}
+        stepId={step.id}
+        title={step.title}
+        duration={duration}
+        startTime={timer.startTime}
+        body={body}
+        paused={isPaused || !!timer.pauseStart}
+        onComplete={handleCompleteStep}
+        onSkip={handleSkipStep}
+        timeLeft={timeLeft}
+        isCompleted={timer.isCompleted}
+      />
+    );
+  };
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
@@ -150,8 +258,9 @@ const PlayMode = () => {
           
           {activeStepsList.map(step => {
             if (step.ext?.duration) {
-              const timerStarted = startedTimers[step.id] !== undefined;
-              if (!timerStarted) {
+              const timer = timers[step.id];
+              if (!timer) {
+                if (!step.ext) return null;
                 return (
                   <Box key={step.id} sx={{
                     p: 2,
@@ -176,26 +285,21 @@ const PlayMode = () => {
                     <Button
                       variant="contained"
                       color="primary"
-                      onClick={() => setStartedTimers(t => ({ ...t, [step.id]: Date.now() }))}
+                      onClick={() => handleStartTimer(step.id)}
                       sx={{ ml: 2 }}
+                      disabled={isPaused}
                     >
                       Start
                     </Button>
                   </Box>
                 );
               }
-              return (
-                <StepTimer
-                  key={step.id}
-                  stepId={step.id}
-                  title={step.title}
-                  duration={step.ext.duration}
-                  startTime={startedTimers[step.id]}
-                  body={step.ext.body}
-                  onComplete={handleCompleteStep}
-                  onSkip={handleSkipStep}
-                />
-              );
+              if (!step.ext) return null;
+              const { duration, body } = step.ext;
+              // Calculate timeLeft for this timer
+              const elapsed = Math.floor((Date.now() - timer.startTime - timer.accumulatedPause) / 1000);
+              const timeLeft = Math.max(0, duration - elapsed);
+              return renderTimerStep(step, timer, timeLeft);
             } else {
               return (
                 <Box key={step.id} sx={{ 

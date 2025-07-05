@@ -10,31 +10,14 @@ interface StepTimerProps {
   duration: number; // in seconds
   startTime: number;
   body?: string;
+  paused?: boolean;
+  timeLeft: number;
+  isCompleted: boolean;
   onComplete: (stepId: string) => void;
   onSkip: (stepId: string) => void;
 }
 
-const StepTimer = ({ stepId, title, duration, startTime, body, onComplete, onSkip }: StepTimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  useEffect(() => {
-    console.log('StepTimer mounted:', { stepId, title, duration, startTime }); // Debug log
-    
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = Math.max(0, duration - elapsed);
-      
-      setTimeLeft(remaining);
-      
-      if (remaining === 0 && !isCompleted) {
-        setIsCompleted(true);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [duration, startTime, isCompleted, stepId, title]);
-
+const StepTimer = ({ stepId, title, duration, body, paused = false, timeLeft, isCompleted, onComplete, onSkip }: StepTimerProps) => {
   const progress = ((duration - timeLeft) / duration) * 100;
 
   const handleComplete = () => {
@@ -99,7 +82,7 @@ const StepTimer = ({ stepId, title, duration, startTime, body, onComplete, onSki
       </Box>
       
       <Typography variant="body2" color="text.secondary">
-        {isCompleted ? "Timer finished! Click the checkmark to complete." : "Timer running..."}
+        {isCompleted ? "Timer finished! Click the checkmark to complete." : paused ? "Timer paused." : "Timer running..."}
       </Typography>
     </Box>
   );
