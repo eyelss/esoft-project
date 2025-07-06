@@ -13,6 +13,13 @@ export const getRecipes = async ({ limit = 20, offset = 0 }) => {
   return await prisma.recipe.findMany({
     skip: offset,
     take: limit,
+    include: {
+      author: {
+        select: {
+          login: true
+        }
+      }
+    }
   });
 }
 
@@ -22,6 +29,60 @@ export const findRecipe = async (id: Recipe['id']) => {
       id
     }
   });
+}
+
+export const findRelatedStepsWithRels = async (recipeId: Recipe['id']) => {
+  return await prisma.step.findMany({
+    where: {
+      recipeId,
+    },
+    include: {
+      children: true,
+      parents: true,
+      extension: true,
+    }
+  });
+}
+
+export const extractRelationsFromSteps = (steps: any[]) => {
+  const relations: { parentId: string; childId: string }[] = [];
+  
+  steps.forEach(step => {
+    step.parents.forEach((parent: any) => {
+      relations.push({
+        parentId: parent.id,
+        childId: step.id
+      });
+    });
+  });
+  
+  return relations;
+}
+
+// Alternative: Direct query for relations (more efficient for large recipes)
+export const getRecipeRelations = async (recipeId: Recipe['id']) => {
+  const steps = await prisma.step.findMany({
+    where: { recipeId },
+    select: {
+      id: true,
+      parents: {
+        select: { id: true }
+      }
+    }
+  });
+  
+  const relations: { parentId: string; childId: string }[] = [];
+  
+  steps.forEach(step => {
+    step.parents.forEach(parent => {
+      relations.push({
+        parentId: parent.id,
+        childId: step.id
+      });
+    });
+  });
+  
+  return relations;
 }
 
 type CreateStepId = string | Step['id'];
@@ -127,5 +188,11 @@ export const updateRecipe = async (id: Recipe['id'], dto: updateRecipeDto) => {
     data: {
       ...dto
     }
+  });
+}
+
+export const deleteRecipe = async (id: Recipe['id']) => {
+  return await prisma.recipe.delete({
+    where: { id }
   });
 }

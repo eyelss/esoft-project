@@ -5,8 +5,6 @@ export type RecipeListItem = {
   title: string;
   description: string;
   owner: string;
-  createdAt: string;
-  updatedAt: string;
 };
 
 type RecipeListState = {
@@ -31,7 +29,15 @@ export const fetchAllRecipes = createAsyncThunk(
         throw new Error('Failed to fetch recipes');
       }
       
-      return await response.json();
+      const recipes = await response.json();
+      
+      // Transform backend response to match frontend format
+      return recipes.map((recipe: any) => ({
+        id: recipe.id,
+        title: recipe.title,
+        description: recipe.description,
+        owner: recipe.owner || 'Unknown',
+      }));
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }

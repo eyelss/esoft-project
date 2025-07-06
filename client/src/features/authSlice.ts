@@ -61,9 +61,12 @@ const authSlice = createSlice({
     builder
       .addCase(verifySession.pending, (state) => {
         state.loading = true;
+        state.user = null;
+        state.error = null;
       })
       .addCase(verifySession.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.error = null;
         state.loading = false;
       })
       .addCase(verifySession.rejected, (state, action) => {
@@ -73,6 +76,8 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
+        state.error = null;
+        state.loading = false;
       });
   },
   selectors: {

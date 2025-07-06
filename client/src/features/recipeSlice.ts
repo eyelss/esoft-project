@@ -94,6 +94,43 @@ export const downloadRecipe = createAsyncThunk(
   }
 );
 
+export const createRecipe = createAsyncThunk(
+  'recipe/createRecipe',
+  async (recipeData: {
+    title: string;
+    description?: string;
+    rootId: string;
+    steps: Array<{
+      tempId: string;
+      title: string;
+      instruction: string;
+      extension?: {
+        body: string;
+        duration: number;
+      };
+    }>;
+    relations: Array<{
+      parentId: string;
+      childId: string;
+    }>;
+  }, { rejectWithValue }) => {
+    const response = await fetch('/api/recipes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(recipeData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return rejectWithValue(errorData);
+    }
+
+    return await response.json();
+  }
+);
+
 const recipeSlice = createSlice({
   name: 'recipe',
   initialState,
@@ -421,7 +458,7 @@ const recipeSlice = createSlice({
       }
 
       const currentStepId = state.recipe.currentStepId;
-      return state.recipe.steps[currentStepId]
+      return state.recipe.steps[currentStepId];
     },
     selectChildrenOfCurrent: (state) => {
       if (state.recipe === null) {
@@ -458,7 +495,7 @@ const recipeSlice = createSlice({
 
       const steps = Object.values(state.recipe.steps);
       const rels = Object.values(state.recipe.relations);
-      
+
       return steps.filter(step => 
         !hasCycle(steps, rels, currentStepId, step.id) && 
         !isDescendant(steps, rels, currentStepId, step.id)
@@ -552,7 +589,55 @@ const recipeSlice = createSlice({
       })
       .addCase(downloadRecipe.fulfilled, (state, action) => {
         state.loading = false;
-        state.recipe = action.payload;
+        const payload = action.payload;
+        
+        // Map backend response to frontend Recipe format
+        state.recipe = {
+          id: payload.id,
+          title: payload.title,
+          description: payload.description,
+          owner: payload.owner,
+          status: 'untouched',
+          currentStepId: payload.rootStepId,
+          rootStepId: payload.rootStepId,
+          steps: Object.entries(payload.steps).reduce((acc, [id, step]: [string, any]) => {
+            acc[id] = {
+              id: step.id,
+              title: step.title,
+              instruction: step.instruction,
+              status: 'untouched' as ChangeStatus,
+              ext: step.extension ? {
+                body: step.extension.body,
+                duration: step.extension.duration
+              } : undefined
+            };
+            return acc;
+          }, {} as { [id: string]: Step }),
+          relations: Object.entries(payload.relations).reduce((acc, [key, relation]: [string, any]) => {
+            acc[key] = {
+              status: 'untouched' as ChangeStatus,
+              parentId: relation.parentId,
+              childId: relation.childId
+            };
+            return acc;
+          }, {} as { [id: string]: Relation })
+        };
+        
+        state.error = null;
+      })
+      .addCase(createRecipe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createRecipe.rejected, (state, action) => {
+        state.loading = false;
+        const errorPayload = action.payload as any;
+        state.error = errorPayload?.error || 'Failed to create recipe';
+      })
+      .addCase(createRecipe.fulfilled, (state, action) => {
+        state.loading = false;
+        // After creating, you might want to navigate to the new recipe
+        // or update the current recipe state
         state.error = null;
       });
   }

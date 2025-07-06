@@ -23,8 +23,15 @@ router.post('/register',
     if (!result.isEmpty()) {
       throw new HttpValidationError(result.array());
     }
+
     
     const { login, password } = req.body;
+
+    const existed = await userService.findUserByLogin(login);
+
+    if (existed !== null) {
+      throw new HttpError(409, 'Login already exists');
+    }
 
     const user = await userService.createUser({ login, password });
     res.status(201).json(user);

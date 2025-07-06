@@ -19,9 +19,9 @@ function Home() {
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
+        {/* <Typography variant="h4" gutterBottom>
           Recipes
-        </Typography>
+        </Typography> */}
         <Grid container spacing={3}>
           {[...Array(8)].map((_, index) => (
             <Grid size={3} key={index}>
@@ -50,9 +50,9 @@ function Home() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      {/* <Typography variant="h4" gutterBottom>
         Recipes
-      </Typography>
+      </Typography> */}
       <Grid container spacing={3}>
         {/* Empty card for creating new recipe - always first */}
         <Grid size={3}>

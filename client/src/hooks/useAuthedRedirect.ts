@@ -17,7 +17,9 @@ const useAuthedRedirect = () => {
     if (user !== null) {
       navigate(routes[authDrain].pathUrl);
     }
-  }, [navigate, user])
+  }, [navigate, user]);
+
+  return navigate;
 }
 
 export default useAuthedRedirect;

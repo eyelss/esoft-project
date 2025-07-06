@@ -6,14 +6,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 
 type Props = {
-  key?: string;
+  itemKey?: string;
   status: ChangeStatus;
   onClick?: React.MouseEventHandler<HTMLDivElement>,
   onClickDelete?: React.MouseEventHandler<HTMLButtonElement>
   deletable?: boolean;
 }
 
-const ListItemButtonStep = ({ children, key, onClick, status, deletable, onClickDelete }: PropsWithChildren<Props>) => {
+const ListItemButtonStep = ({ children, itemKey, onClick, status, deletable, onClickDelete }: PropsWithChildren<Props>) => {
 
   return (
     <ListItem sx={{ p: 0 }} secondaryAction={deletable && 
@@ -22,7 +22,7 @@ const ListItemButtonStep = ({ children, key, onClick, status, deletable, onClick
       </IconButton>
     }>
     <ListItemButton
-      key={key}
+      key={itemKey}
       onClick={onClick}
       sx={{ 
         whiteSpace: 'normal',

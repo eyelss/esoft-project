@@ -10,9 +10,9 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.use('/auth', authController);
-app.use('/users', usersController);
-app.use('/recipes', recipesController);
+app.use('/api/auth', authController);
+app.use('/api/users', usersController);
+app.use('/api/recipes', recipesController);
 
 // 404 handling
 app.use((req, res) => {

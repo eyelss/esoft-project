@@ -1,12 +1,12 @@
-import useNonAuthedRedirect from "../hooks/useNonAuthedRedirect";
+import { RequireAuth } from "../components/ProtectedRoute";
 
 function Profile() {
-  useNonAuthedRedirect();
-
   return (
-    <>
-      <h2>Profile</h2>
-    </>
+    <RequireAuth>
+      <>
+        <h2>Profile</h2>
+      </>
+    </RequireAuth>
   );
 }
 

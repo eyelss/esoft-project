@@ -10,7 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError } from "../features/recipeSlice";
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep } from "../features/recipeSlice";
 import { selectUser } from "../features/authSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
@@ -140,7 +140,7 @@ function Editor() {
   const [dialOpen, setDialOpen] = useState(false);
   const [selectedStepId, setSelectedStepId] = useState('');
   const [editMode, setEditMode] = useState(false);
-  const isDeletable = children.length === 0; // && isOwning; 
+  const isDeletable = children.length === 0 && parents.length !== 0; // && isOwning; 
 
   const params = useParams();
 
@@ -155,14 +155,17 @@ function Editor() {
 
   useEffect(() => {
     if (params.recipeId === undefined) {
-      if (status !== 'created') {
+      if (!recipe || recipe.status !== 'created') {
         dispatch(createEmpty('owner'));
       }
     } else {
-      dispatch(downloadRecipe(params.recipeId));
+      // Only download if we don't have a recipe or if it's a different recipe
+      if (!recipe || recipe.id !== params.recipeId) {
+        dispatch(downloadRecipe(params.recipeId));
+      }
     }
     
-  }, [params.recipeId, status, dispatch]);
+  }, [params.recipeId, recipe?.id, dispatch]);
 
   // Prevent non-authenticated users from accessing edit mode
   useEffect(() => {
@@ -303,7 +306,7 @@ function Editor() {
               <Typography variant="h5">
                 {title || 'Recipe Title'}
               </Typography>
-              {user && (
+              {(isOwning || (status === 'created')) && (
                 <Button
                   variant="outlined"
                   startIcon={<EditIcon />}
@@ -352,7 +355,11 @@ function Editor() {
                   sx={{ display: 'flex', alignItems: 'center' }}
                   color="inherit"
                   component="button"
-                  onClick={() => {}}
+                  onClick={() => {
+                    const delStepId = currentStep?.id;
+                    dispatch(shiftCurrent(parents[0].id));
+                    dispatch(deleteStep(delStepId));
+                  }}
                 >
                   <DeleteIcon sx={{ mr: .6 }} fontSize="inherit"/>
                   Delete
