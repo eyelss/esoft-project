@@ -61,14 +61,14 @@ model Step {
   
   title           String
 
-  prologue        String
+  instruction     String
   extension       StepExtension?
 
   parents         Step[]    @relation("step_relations")
   children        Step[]    @relation("step_relations")
 
-  recipe          Recipe    @relation("steps_owning_relation", fields: [recipeId], references: [id])
-  recipeId        String    @map("recipe_id")
+  recipe          Recipe?   @relation("steps_owning_relation", fields: [recipeId], references: [id])
+  recipeId        String?   @map("recipe_id")
   
   @@map("steps")
 }
