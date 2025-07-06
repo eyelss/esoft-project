@@ -1,5 +1,6 @@
 import { alpha, InputBase, styled } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
+import React, { useState } from "react";
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -35,23 +36,38 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     [theme.breakpoints.up('sm')]: {
-      width: '12ch',
+      width: '25ch',
       '&:focus': {
-        width: '20ch',
+        width: '40ch',
       },
     },
   },
 }));
 
-function SearchInput() {
+type Props = {
+  onSearch?: (query: string) => void;
+}
+
+function SearchInput({ onSearch }: Props) {
+  const [query, setQuery] = useState('');
+
   return (
     <Search sx={{ mx: 1 }}>
       <SearchIconWrapper>
         <SearchIcon />
       </SearchIconWrapper>
       <StyledInputBase
-        placeholder="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onSearch !== undefined) {
+            e.preventDefault();
+            onSearch(query);
+          }
+        }}
+        placeholder="Search recipe"
         inputProps={{ 'aria-label': 'search' }}
+        onSubmit={() => console.log('search')}
       />
     </Search>
   );

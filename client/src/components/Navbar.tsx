@@ -5,7 +5,6 @@ import type { OverridableComponent } from "@mui/material/OverridableComponent";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectTheme, toggleTheme, type ThemeType } from "../features/themeSlice";
-import { navItems } from "../pages/routes";
 import SearchInput from "./Search";
 import { logout, selectUser } from "../features/authSlice";
 import { useAppDispatch } from "../store";
@@ -32,19 +31,8 @@ function Navbar() {
       >
         <Toolbar>
           <RamenDiningIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {Object.entries(navItems).map(([pageName, route]) => (
-              <Button 
-                component={Link}
-                key={pageName}
-                to={route.pathUrl} 
-                color="inherit"
-              >
-                {pageName}
-              </Button>
-            ))}
-          </Typography>
           <SearchInput/>
+          <Box sx={{ flexGrow: 1 }}/>
           <IconButton onClick={() => dispatch(toggleTheme())}>
             <IconComponent/>
           </IconButton>

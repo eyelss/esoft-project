@@ -15,20 +15,6 @@ type RouteConfig = {
   [name: string]: RouteType 
 };
 
-function getNavItems<
-  T extends RouteConfig, 
-  K extends ReadonlyArray<keyof T>
->(
-  obj: T, 
-  keys: K
-): Pick<T, K[number]> {
-  return keys.reduce((acc, key) => {
-    acc[key] = obj[key];
-    return acc;
-  }, {} as Pick<T, K[number]>);
-}
-
-
 // !ALL APP ROUTES
 const routes = {
   'home': { pathUrl: '/', component: Home },
@@ -44,20 +30,12 @@ type RouteNameType = keyof typeof routes;
 // !DRAIN ROUTE (REPLACES NON-EXSITENT PATH)
 const drainRoute = routes['notFound'];// as const satisfies RouteNameType;
 
-// !VISIBLE ROUTES ON NAVIGATION BAR
-const navRoutesNames = [
-  'home',
-  'recipe',
-] as const satisfies RouteNameType[];
-
 // !DRAIN FOR NON-AUTH USERS 
 const nonAuthDrain = 'login' as const satisfies RouteNameType;
 
 // !DRAIN FOR NON-AUTH USERS 
 const authDrain = 'home' as const satisfies RouteNameType;
 
-const navItems = getNavItems(routes, navRoutesNames);
-
-export { navItems, drainRoute, nonAuthDrain, authDrain };
+export { drainRoute, nonAuthDrain, authDrain };
 
 export default routes;
