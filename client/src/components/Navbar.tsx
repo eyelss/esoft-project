@@ -33,7 +33,7 @@ function Navbar() {
           <RamenDiningIcon sx={{ mr: 2 }} />
           <SearchInput onSearch={query => navigate({
             pathname: '/',
-            search: query === undefined ? '?' : `?query=${query}`
+            search: query === '' ? undefined : `?query=${query}`
           })}/>
           <Box sx={{ flexGrow: 1 }}/>
           <IconButton onClick={() => dispatch(toggleTheme())}>
