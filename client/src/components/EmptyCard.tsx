@@ -1,4 +1,4 @@
-import { Card, CardContent, IconButton, CardActionArea, Typography, Alert } from "@mui/material";
+import { Card, CardContent, IconButton, CardActionArea, Typography, Alert, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../features/authSlice";
@@ -34,21 +34,26 @@ function EmptyCard() {
                     {user ? (
                         // Authenticated user - show create recipe option
                         <>
-                            <IconButton 
-                                color="primary" 
+                            <Box justifySelf="center"
                                 sx={{ 
                                     mb: 2,
                                     width: 64,
                                     height: 64,
                                     backgroundColor: 'primary.main',
                                     color: 'white',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     '&:hover': {
                                         backgroundColor: 'primary.dark',
                                     }
                                 }}
                             >
-                                <AddIcon sx={{ fontSize: 32 }} />
-                            </IconButton>
+                                <AddIcon 
+                                    sx={{ fontSize: 32 }} 
+                                />
+                            </Box>
                             <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
                                 Create New Recipe
                             </Typography>
@@ -59,13 +64,17 @@ function EmptyCard() {
                     ) : (
                         // Non-authenticated user - show auth reminder
                         <>
-                            <IconButton 
+                            <Box justifySelf="center"
                                 sx={{ 
                                     mb: 2,
                                     width: 64,
                                     height: 64,
                                     backgroundColor: 'grey.300',
                                     color: 'grey.600',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     '&:hover': {
                                         backgroundColor: 'grey.400',
                                         color: 'grey.700',
@@ -73,7 +82,7 @@ function EmptyCard() {
                                 }}
                             >
                                 <LockIcon sx={{ fontSize: 32 }} />
-                            </IconButton>
+                            </Box>
                             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'bold' }}>
                                 Sign In to Create
                             </Typography>
