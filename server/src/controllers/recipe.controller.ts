@@ -21,7 +21,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             id: recipe.id,
             title: recipe.title,
             description: recipe.description,
-            owner: recipe.author?.login || 'Unknown',
+            owner: recipe.author.login,
         }));
         
         res.json(transformedRecipes);

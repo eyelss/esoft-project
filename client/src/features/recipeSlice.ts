@@ -160,6 +160,11 @@ const recipeSlice = createSlice({
         state.recipe.steps[id].status = 'deleted';
       } else {
         delete state.recipe.steps[id];
+        Object.entries(state.recipe.relations).forEach(([key, rel]) => {
+          if (rel.parentId === id || rel.childId === id) {
+            delete state.recipe?.relations[key];
+          }
+        })
       }
     },
     updateStep: (state, action) => {
@@ -575,6 +580,19 @@ const recipeSlice = createSlice({
         .map(([stepId, _]) => state.recipe!.steps[stepId])
         .filter(Boolean);
     },
+    selectRecipeChangeStatus: (state) => {
+      if (state.recipe === null) {
+        return 'untocuhed';
+      }
+
+      if (state.recipe.status !== 'untouched') {
+        return state.recipe.status;
+      }
+
+      if (Object.values(state.recipe.steps).find(step => step.status != 'untouched') !== undefined) {
+        return 'modified';
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -679,6 +697,7 @@ export const {
   selectCompletedSteps,
   selectStepTimers,
   selectActiveStepsList,
+  selectRecipeChangeStatus,
 } = recipeSlice.selectors;
 
 export const selectIsUserOwner = createSelector(

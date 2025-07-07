@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent, Skeleton, Alert } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent, Skeleton, Alert, Badge } from "@mui/material";
 import { useAppDispatch } from "../store";
 import { useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep } from "../features/recipeSlice";
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep, selectRecipeChangeStatus } from "../features/recipeSlice";
 import { selectUser } from "../features/authSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
@@ -18,6 +18,7 @@ import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 import useRecipeAuth from "../hooks/useRecipeAuth";
+import RecipeTitleBadge from "../components/RecipeBadge";
 
 // Loading Skeleton Components
 const RecipeSkeleton = () => (
@@ -129,18 +130,21 @@ function Editor() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentStep = useSelector(selectCurrentStep);
+  // WARNING! SHOULD MEMOIZE THESE SELECTORS:
   const children = useSelector(selectChildrenOfCurrent);
   const parents = useSelector(selectParentsOfCurrent);
   const possibleChildren = useSelector(selectPossibleChildren);
   const deletableParentConnections = useSelector(selectDeletableParentConnections);
   const deletableChildConnections = useSelector(selectDeletableChildConnections);
+  // ---
   const recipe = useSelector(selectRecipe);
   const { title, description, status } = recipe || {};
   const isOwning = useSelector(selectIsUserOwner);
   const [dialOpen, setDialOpen] = useState(false);
   const [selectedStepId, setSelectedStepId] = useState('');
   const [editMode, setEditMode] = useState(false);
-  const isDeletable = children.length === 0 && parents.length !== 0; // && isOwning; 
+  const isDeletable = children.length === 0 && parents.length !== 0; // && isOwning;
+  const recipeChangeStatus = useSelector(selectRecipeChangeStatus);
 
   const params = useParams();
 
@@ -156,7 +160,10 @@ function Editor() {
   useEffect(() => {
     if (params.recipeId === undefined) {
       if (!recipe || recipe.status !== 'created') {
-        dispatch(createEmpty('owner'));
+        // if user is creating new recipe
+        dispatch(createEmpty(user?.login));
+        // set edit mode right after creating new recipe
+        setEditMode(true);
       }
     } else {
       // Only download if we don't have a recipe or if it's a different recipe
@@ -257,7 +264,6 @@ function Editor() {
   };
 
   return (
-
     <Box
       sx={{
         display: 'flex',
@@ -304,7 +310,9 @@ function Editor() {
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h5">
-                {title || 'Recipe Title'}
+                <RecipeTitleBadge status={undefined}>
+                  {title || 'Recipe Title'}
+                </RecipeTitleBadge>
               </Typography>
               {(isOwning || (status === 'created')) && (
                 <Button
@@ -336,6 +344,13 @@ function Editor() {
         ) : (
           // Edit Mode View
           <>
+            <Grow in={false}>
+              <RecipeTitleBadge status={recipeChangeStatus}>
+                <Typography variant="body2">
+                  {recipeChangeStatus}
+                </Typography>
+              </RecipeTitleBadge>
+            </Grow>
             <Breadcrumbs aria-label="breadcrumb" sx={{ m: 1, alignContent: 'center'}}>
               { editMode &&
                 <Link
@@ -487,6 +502,7 @@ function Editor() {
             <TransitionGroup>
             {currentStep !== undefined ? 
               children.map(child => {
+                
                 const relationId = getChildRelationId(child.id);
                 const isDeletable = relationId && deletableChildConnections.includes(relationId);
                 
