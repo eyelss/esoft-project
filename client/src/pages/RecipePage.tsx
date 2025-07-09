@@ -344,13 +344,13 @@ function Editor() {
         ) : (
           // Edit Mode View
           <>
-            <Grow in={false}>
+            {/* <Grow in={recipeChangeStatus !== 'untouched'}> */}
               <RecipeTitleBadge status={recipeChangeStatus}>
                 <Typography variant="body2">
                   {recipeChangeStatus}
                 </Typography>
               </RecipeTitleBadge>
-            </Grow>
+            {/* </Grow> */}
             <Breadcrumbs aria-label="breadcrumb" sx={{ m: 1, alignContent: 'center'}}>
               { editMode &&
                 <Link

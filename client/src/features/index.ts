@@ -4,11 +4,11 @@ import authReducer from "./authSlice";
 import recipeReducer from "./recipeSlice";
 import recipeListReducer from "./recipeListSlice";
 
-type ReducersDict = {
-  [key: string]: Reducer;
-};
+// type ReducersDict = {
+//   [key: string]: Reducer;
+// };
 
-const reducers: ReducersDict = {
+const reducers = {
   theme: themeReducer,
   recipe: recipeReducer,
   auth: authReducer,

@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit";
 import { hasCycle, isDescendant, canDeleteConnection, getDeletableConnections } from "../utils/graph";
 import { selectLogin } from "./authSlice";
+import type { RootState } from "../store";
 
 export type ChangeStatus = 
 | 'created'
@@ -465,47 +466,6 @@ const recipeSlice = createSlice({
       const currentStepId = state.recipe.currentStepId;
       return state.recipe.steps[currentStepId];
     },
-    selectChildrenOfCurrent: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      const currentStepId = state.recipe.currentStepId;
-
-      const steps = state.recipe.steps;
-
-      return Object.values(state.recipe.relations)
-        .filter(rel => rel.parentId === currentStepId)
-        .map(rel => steps[rel.childId]);
-    },
-    selectParentsOfCurrent: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      const currentStepId = state.recipe.currentStepId;
-
-      const steps = state.recipe.steps;
-
-      return Object.values(state.recipe.relations)
-        .filter(rel => rel.childId === currentStepId)
-        .map(rel => steps[rel.parentId]);
-    },
-    selectPossibleChildren: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      const currentStepId = state.recipe.currentStepId;
-
-      const steps = Object.values(state.recipe.steps);
-      const rels = Object.values(state.recipe.relations);
-
-      return steps.filter(step => 
-        !hasCycle(steps, rels, currentStepId, step.id) && 
-        !isDescendant(steps, rels, currentStepId, step.id)
-      );
-    },
     selectDeletableConnections: (state) => {
       if (state.recipe === null) {
         return [];
@@ -520,44 +480,6 @@ const recipeSlice = createSlice({
         state.recipe.rootStepId
       );
     },
-    selectDeletableParentConnections: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      const currentStepId = state.recipe.currentStepId;
-      const parentConnections = Object.entries(state.recipe.relations)
-        .filter(([_, rel]) => rel.childId === currentStepId)
-        .map(([id, _]) => id);
-
-      return parentConnections.filter(relationId => 
-        canDeleteConnection(
-          Object.values(state.recipe!.steps),
-          state.recipe!.relations,
-          relationId,
-          state.recipe!.rootStepId
-        )
-      );
-    },
-    selectDeletableChildConnections: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      const currentStepId = state.recipe.currentStepId;
-      const childConnections = Object.entries(state.recipe.relations)
-        .filter(([_, rel]) => rel.parentId === currentStepId)
-        .map(([id, _]) => id);
-
-      return childConnections.filter(relationId => 
-        canDeleteConnection(
-          Object.values(state.recipe!.steps),
-          state.recipe!.relations,
-          relationId,
-          state.recipe!.rootStepId
-        )
-      );
-    },
     selectPlayModeStatus: (state) => {
       return state.playMode.status;
     },
@@ -570,19 +492,9 @@ const recipeSlice = createSlice({
     selectStepTimers: (state) => {
       return state.playMode.stepTimers;
     },
-    selectActiveStepsList: (state) => {
-      if (state.recipe === null) {
-        return [];
-      }
-
-      return Object.entries(state.playMode.activeSteps)
-        .filter(([_, status]) => status === 'active')
-        .map(([stepId, _]) => state.recipe!.steps[stepId])
-        .filter(Boolean);
-    },
     selectRecipeChangeStatus: (state) => {
       if (state.recipe === null) {
-        return 'untocuhed';
+        return 'untouched';
       }
 
       if (state.recipe.status !== 'untouched') {
@@ -592,6 +504,14 @@ const recipeSlice = createSlice({
       if (Object.values(state.recipe.steps).find(step => step.status != 'untouched') !== undefined) {
         return 'modified';
       }
+    },
+    selectStatusOfCurrent: (state) => {
+      if (state.recipe === null) {
+        return 'untouched';
+      }
+
+      const currentId = state.recipe.currentStepId;
+      return state.recipe.steps[currentId].status;
     },
   },
   extraReducers: (builder) => {
@@ -661,6 +581,121 @@ const recipeSlice = createSlice({
   }
 });
 
+export const selectChildrenOfCurrent = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+  ],
+  (recipe) => {
+    if (recipe === null) {
+      return [];
+    }
+
+    const currentStepId = recipe.currentStepId;
+
+    const steps = recipe.steps;
+
+    return Object.values(recipe.relations)
+      .filter(rel => rel.parentId === currentStepId)
+      .map(rel => steps[rel.childId]);
+});
+export const selectParentsOfCurrent = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+  ],
+  (recipe) => {
+  if (recipe === null) {
+    return [];
+  }
+
+  const currentStepId = recipe.currentStepId;
+
+  const steps = recipe.steps;
+
+  return Object.values(recipe.relations)
+    .filter(rel => rel.childId === currentStepId)
+    .map(rel => steps[rel.parentId]);
+});
+
+export const selectPossibleChildren = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+  ],
+  (recipe) => {
+  if (recipe === null) {
+    return [];
+  }
+
+  const currentStepId = recipe.currentStepId;
+
+  const steps = Object.values(recipe.steps);
+  const rels = Object.values(recipe.relations);
+
+  return steps.filter(step => 
+    !hasCycle(steps, rels, currentStepId, step.id) && 
+    !isDescendant(steps, rels, currentStepId, step.id)
+  );
+});
+
+export const selectDeletableParentConnections = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+  ],
+  (recipe) => {
+  if (recipe === null) {
+    return [];
+  }
+
+  const currentStepId = recipe.currentStepId;
+  const parentConnections = Object.entries(recipe.relations)
+    .filter(([_, rel]) => rel.childId === currentStepId)
+    .map(([id, _]) => id);
+
+  return parentConnections.filter(relationId => 
+    canDeleteConnection(
+      Object.values(recipe!.steps),
+      recipe!.relations,
+      relationId,
+      recipe!.rootStepId
+    )
+  );
+});
+
+export const selectDeletableChildConnections = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+  ],
+  (recipe) => {
+  if (recipe === null) {
+    return [];
+  }
+
+  const currentStepId = recipe.currentStepId;
+  const childConnections = Object.entries(recipe.relations)
+    .filter(([_, rel]) => rel.parentId === currentStepId)
+    .map(([id, _]) => id);
+
+  return childConnections.filter(relationId => 
+    canDeleteConnection(
+      Object.values(recipe!.steps),
+      recipe!.relations,
+      relationId,
+      recipe!.rootStepId
+    )
+  );
+});
+
+export const selectActiveStepsList = createSelector(
+  [
+    (state: RootState) => state.recipe.recipe,
+    (state: RootState) => state.recipe.playMode,
+  ],
+  (recipe, playMode) => {
+    return Object.entries(playMode.activeSteps)
+      .filter(([_, status]) => status === 'active')
+      .map(([stepId, _]) => recipe!.steps[stepId])
+      .filter(Boolean);
+});
+
 export const { 
   createStep,
   deleteStep,
@@ -686,17 +721,18 @@ export const {
   selectLoading,
   selectError,
   selectCurrentStep,
-  selectChildrenOfCurrent,
-  selectParentsOfCurrent,
-  selectPossibleChildren,
+  // selectChildrenOfCurrent,
+  // selectParentsOfCurrent,
+  selectStatusOfCurrent,
+  // selectPossibleChildren,
   selectDeletableConnections,
-  selectDeletableParentConnections,
-  selectDeletableChildConnections,
+  // selectDeletableParentConnections,
+  // selectDeletableChildConnections,
   selectPlayModeStatus,
   selectActiveSteps,
   selectCompletedSteps,
   selectStepTimers,
-  selectActiveStepsList,
+  // selectActiveStepsList,
   selectRecipeChangeStatus,
 } = recipeSlice.selectors;
 
