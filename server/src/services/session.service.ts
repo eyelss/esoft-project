@@ -4,8 +4,10 @@ import prisma from "../db";
 
 const HOURS = 1;
 
+export const getExpireDate = () => new Date(Date.now() + 1000 * 60 * 60 * HOURS);
+
 export const createSession = async (owner: User, data: InputJsonValue = {}) => {
-  const expiredAt = new Date(Date.now() + 1000 * 60 * 60 * HOURS);
+  const expiredAt = getExpireDate();
 
   return await prisma.session.create({
     data: {
@@ -43,5 +45,14 @@ export const verifySession = async (sessionId: Session['id']) => {
 export const destroySession = async (sessionId: Session['id']) => {
   return await prisma.session.delete({
     where: { id: sessionId },
+  })
+}
+
+export const destroyExpiredSessions = async () => {
+  return await prisma.session.deleteMany({
+    where: { 
+      expiredAt: {
+        lt: new Date(),
+    } }
   })
 }

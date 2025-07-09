@@ -5,7 +5,7 @@ import * as userService from "../services/user.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import HttpError from "../errors";
 import { loginValidator, passwordValidator } from "../utils/validators";
-import { createSession, destroySession } from "../services/session.service";
+import { createSession, destroySession, getExpireDate } from "../services/session.service";
 import HttpValidationError from "../errors/validation.error";
 
 const router = Router();
@@ -54,7 +54,9 @@ router.post('/login',
       // verification success
       createSession(user).then(session => {
         res.cookie('sessionId', session.id, {
-          httpOnly: true
+          httpOnly: true,
+          expires: getExpireDate(),
+          secure: process.env.NODE_ENV === 'production',
         });
         res.status(200).json({ success: true });
       });
