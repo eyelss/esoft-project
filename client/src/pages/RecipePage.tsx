@@ -1,8 +1,9 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent, Skeleton, Alert, Badge } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Breadcrumbs, Button, ButtonGroup, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fade, FormControl, Grow, IconButton, InputLabel, Link, List, ListItem, ListItemButton, ListSubheader, MenuItem, OutlinedInput, Paper, Rating, Select, TextField, Toolbar, Tooltip, Typography, type SelectChangeEvent, Skeleton, Alert, Badge, Chip, Stack } from "@mui/material";
 import { useAppDispatch } from "../store";
 import { useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from "@mui/icons-material/Add";
 import ShareIcon from "@mui/icons-material/Share"
 import EditIcon from '@mui/icons-material/Edit';
@@ -10,7 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep, selectRecipeChangeStatus } from "../features/recipeSlice";
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep, selectRecipeChangeStatus, selectStatusOfCurrent, updateRecipe, createRecipe, deleteRecipe } from "../features/recipeSlice";
 import { selectUser } from "../features/authSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
@@ -18,7 +19,6 @@ import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 import useRecipeAuth from "../hooks/useRecipeAuth";
-import RecipeTitleBadge from "../components/RecipeBadge";
 
 // Loading Skeleton Components
 const RecipeSkeleton = () => (
@@ -145,6 +145,7 @@ function Editor() {
   const [editMode, setEditMode] = useState(false);
   const isDeletable = children.length === 0 && parents.length !== 0; // && isOwning;
   const recipeChangeStatus = useSelector(selectRecipeChangeStatus);
+  const stepChangeStatus = useSelector(selectStatusOfCurrent);
 
   const params = useParams();
 
@@ -263,6 +264,35 @@ function Editor() {
     }
   };
 
+  const handleRecipeUpload = async () => {
+    if (recipeChangeStatus === 'created') {
+      const result = await dispatch(createRecipe());
+      if (createRecipe.fulfilled.match(result)) {
+        const newRecipe = result.payload;
+        navigate(`/recipe/${newRecipe.id}`);
+      }
+    } else if (recipeChangeStatus === 'modified') {
+      const result = await dispatch(updateRecipe());
+      if (createRecipe.fulfilled.match(result)) {
+        const newRecipe = result.payload;
+        navigate(`/recipe/${newRecipe.id}`);
+      }
+    }
+  }
+
+  const handleRecipeDelete = async () => {
+    
+    if (params.recipeId === undefined || recipe?.id !== params.recipeId) {
+      return;
+    }
+    
+    const result = await dispatch(deleteRecipe(params.recipeId));
+
+    if (deleteRecipe.fulfilled.match(result)) {
+      navigate('/');
+    }
+  }
+
   return (
     <Box
       sx={{
@@ -310,9 +340,7 @@ function Editor() {
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h5">
-                <RecipeTitleBadge status={undefined}>
-                  {title || 'Recipe Title'}
-                </RecipeTitleBadge>
+                {title || 'Recipe Title'}
               </Typography>
               {(isOwning || (status === 'created')) && (
                 <Button
@@ -344,13 +372,51 @@ function Editor() {
         ) : (
           // Edit Mode View
           <>
-            {/* <Grow in={recipeChangeStatus !== 'untouched'}> */}
-              <RecipeTitleBadge status={recipeChangeStatus}>
-                <Typography variant="body2">
-                  {recipeChangeStatus}
-                </Typography>
-              </RecipeTitleBadge>
-            {/* </Grow> */}
+            <Stack direction="row" spacing={1} sx={{ p: 1 }}>
+              {isOwning && status !== 'created' &&
+                <Chip
+                  size="small"
+                  label="Delete recipe"
+                  color="error"
+                  variant="outlined"
+                  onClick={handleRecipeDelete}
+                  onDelete={handleRecipeDelete}
+                  deleteIcon={<DeleteIcon />}
+                />
+              }
+              {recipeChangeStatus !== 'untouched' &&
+                <Chip
+                  size="small"
+                  label={
+                    recipeChangeStatus === 'created' ? 'Upload recipe' : 
+                    recipeChangeStatus === 'modified' ? 'Update recipe' : 
+                    `Recipe ${recipeChangeStatus}`}
+                  color={recipeChangeStatus === 'created' ? 'primary' : 
+                    recipeChangeStatus === 'modified' ? 'warning' :
+                    stepChangeStatus === 'deleted' ? 'error' :
+                    'default'
+                  }
+                  deleteIcon={<SaveIcon/>}
+                  variant="outlined"
+                  onClick={handleRecipeUpload}
+                  onDelete={handleRecipeUpload}
+                  sx={{ mb: 2 }}
+                />
+              }
+              {stepChangeStatus !== 'untouched' &&
+                <Chip
+                  size="small"
+                  label={`Step ${stepChangeStatus}`}
+                  color={stepChangeStatus === 'created' ? 'primary' : 
+                    stepChangeStatus === 'modified' ? 'warning' :
+                    stepChangeStatus === 'deleted' ? 'error' :
+                    'default'
+                  }
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                />
+              }
+            </Stack>
             <Breadcrumbs aria-label="breadcrumb" sx={{ m: 1, alignContent: 'center'}}>
               { editMode &&
                 <Link

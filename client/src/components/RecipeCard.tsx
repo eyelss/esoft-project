@@ -14,7 +14,7 @@ function RecipeCard({ recipe }: RecipeCardProps) {
     };
 
     return (
-        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 200 }}>
             <CardActionArea 
                 onClick={handleClick}
                 sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}

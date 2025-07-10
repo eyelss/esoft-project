@@ -14,17 +14,17 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(expressWinston.logger({
-  transports: [
-    new winston.transports.Console()
-  ],
-  format: winston.format.combine(
-    winston.format.colorize(),
-    winston.format.json(),
-  ),
-  meta: true,
-  expressFormat: true,
-}));
+// app.use(expressWinston.logger({
+//   transports: [
+//     new winston.transports.Console()
+//   ],
+//   format: winston.format.combine(
+//     winston.format.colorize(),
+//     winston.format.json(),
+//   ),
+//   meta: true,
+//   expressFormat: true,
+// }));
 
 app.use('/api/auth', authController);
 app.use('/api/users', usersController);

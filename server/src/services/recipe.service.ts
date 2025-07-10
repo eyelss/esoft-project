@@ -178,16 +178,116 @@ export const createRecipe = async (dto: CreateRecipeDto) => {
   });
 }
 
-type updateRecipeDto = Partial<Recipe>;
+type StepDto =
+| { action: 'create', tempId: Step['id'], title: Step['title'], instruction: Step['instruction'], extension?: { body: string, duration: number } }
+| { action: 'modified', id: Step['id'], title?: Step['title'], instruction?: Step['instruction'], extension?: { body: string, duration: number } }
+| { action: 'delete', id: Step['id'] }
 
-export const updateRecipe = async (id: Recipe['id'], dto: updateRecipeDto) => {
-  return await prisma.recipe.update({
-    where: {
-      id
-    },
-    data: {
-      ...dto
+type RelationDto = { 
+  action: 'create' | 'delete', 
+  parentId: Step['id'], 
+  childId: Step['id'] 
+}
+
+type UpdateRecipeDto = {
+  recipeDto?: Omit<Partial<Recipe>, 'authorId' | 'rootStepId' | 'id'>,
+  stepsDto: Array<StepDto>
+  relationsDto: Array<RelationDto>
+}
+
+export const updateRecipe = async (id: Recipe['id'], dto: UpdateRecipeDto) => {
+  return await prisma.$transaction(async (ctx) => {
+    // update recipe title / description
+    await ctx.recipe.update({
+      where: {
+        id
+      },
+      data: {
+        ...dto.recipeDto,
+      }
+    });
+    
+    const stepMap = new Map<string, Step>();
+    
+    // creating steps
+    for (const { tempId, title, instruction, extension } of dto.stepsDto.filter(stepDto => stepDto.action === 'create')) {   
+      const step = await ctx.step.create({
+        data: {
+          title,
+          instruction,
+          recipeId: id,
+          ...(extension && {
+            extension: {
+              create: {
+                duration: extension.duration,
+                body: extension.body,
+              }
+            }
+          }),
+        }
+      });
+
+      stepMap.set(tempId, step)
     }
+
+
+    // deleting steps
+    await ctx.step.deleteMany({
+      where: {
+        id: {
+          in: dto.stepsDto.filter(stepDto => stepDto.action === 'delete').map(stepDto => stepDto.id),
+        }
+      }
+    });
+
+
+    // updating steps
+    for (const { id, title, instruction, extension } of dto.stepsDto.filter(stepDto => stepDto.action === 'modified')) {
+      await ctx.step.update({
+        where: {
+          id,
+        },
+        data: {
+          title,
+          instruction,
+          ...(extension && {
+            extension: {
+              upsert: {
+                update: { body: extension.body, duration: extension.duration },
+                create: { body: extension.body, duration: extension.duration },
+              }
+            }
+          })
+        },
+      });
+    }
+
+    for (const { childId, parentId, action } of dto.relationsDto) {
+      switch (action) {
+        case 'create':
+          await ctx.step.update({
+            where: { id: stepMap.get(parentId)?.id ?? parentId },
+            data: {
+              children: {
+                connect: { id: stepMap.get(childId)?.id ?? childId },
+              },
+            },
+          });
+          break;
+        case 'delete':
+          await ctx.step.update({
+            where: { id: stepMap.get(parentId)?.id ?? parentId },
+            data: {
+              children: {
+                disconnect: { id: stepMap.get(childId)?.id ?? childId },
+              },
+            },
+          });
+          break;
+      }
+    }
+
+    return await ctx.recipe.findUnique({ where: { id }});
   });
 }
 

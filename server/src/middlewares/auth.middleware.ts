@@ -15,14 +15,14 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const sessionId = req.cookies.sessionId;
   
   if (sessionId === undefined) {
-    throw new HttpError(401,'Session id is missing');
+    throw new HttpError(401, 'Session id is missing');
   }
 
   const result = await verifySession(sessionId)
   
   if (result === null) {
     res.clearCookie('sessionId');
-    throw new HttpError(401,'Verfication is failed');
+    throw new HttpError(401, 'Verfication is failed');
   }
 
   req.user = result.user;

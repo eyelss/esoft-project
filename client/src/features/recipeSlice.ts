@@ -95,26 +95,116 @@ export const downloadRecipe = createAsyncThunk(
   }
 );
 
+export const deleteRecipe = createAsyncThunk(
+  'recipe/deleteRecipe',
+  async (id: Recipe['id'], { rejectWithValue }) => {
+    const response = await fetch(`/api/recipes/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return rejectWithValue(error);
+    }
+
+    return await response.json();
+  }
+);
+
+export const updateRecipe = createAsyncThunk(
+  'recpie/uploadRecipe',
+  async (_, { rejectWithValue, getState }) => {
+    const recipe = (getState() as RootState).recipe.recipe;
+
+    if (recipe === null) {
+      return rejectWithValue('Null recipe state');
+    }
+
+    const payload = {
+      recipeDto: recipe.status === 'modified' ? {
+        title: recipe.title,
+        description: recipe.description,
+      } : {},
+      stepsDto: Object.values(recipe.steps)
+        .filter(step => step.status !== 'untouched')
+        .map(step => {
+          switch (step.status) {
+            case 'created':
+              return {
+                tempId: step.id,
+                action: 'create',
+                title: step.title,
+                instruction: step.instruction,
+                extension: step.ext,
+              }
+            case 'modified':
+              return {
+                id: step.id,
+                title: step.title,
+                instruction: step.instruction,
+                extension: step.ext,
+                action: 'modified',
+              }
+            case 'deleted':
+              return {
+                id: step.id,
+                action: 'delete',
+              }
+            default:
+              throw new Error('Unreachable');
+          }
+        }),
+      relationsDto: Object.values(recipe.relations)
+        .filter(rel => rel.status !== 'untouched')
+        .map(({ parentId, childId, status }) => ({ 
+          parentId, 
+          childId,
+          action: status === 'created' ? 'create' : 'delete',
+        })),
+    }
+
+    const response = await fetch(`/api/recipes/${recipe.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return rejectWithValue(error);
+    }
+
+    return await response.json();
+  }
+)
+
 export const createRecipe = createAsyncThunk(
   'recipe/createRecipe',
-  async (recipeData: {
-    title: string;
-    description?: string;
-    rootId: string;
-    steps: Array<{
-      tempId: string;
-      title: string;
-      instruction: string;
-      extension?: {
-        body: string;
-        duration: number;
-      };
-    }>;
-    relations: Array<{
-      parentId: string;
-      childId: string;
-    }>;
-  }, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
+    const recipe = (getState() as RootState).recipe.recipe;
+
+    if (recipe === null) {
+      return rejectWithValue('Null recipe state');
+    }
+
+    const recipeData = {
+      title: recipe.title,
+      description: recipe.description,
+      rootId: recipe.rootStepId,
+      steps: Object.values(recipe.steps).map(step => ({
+        tempId: step.id,
+        title: step.title,
+        instruction: step.instruction,
+        extension: step.ext,
+      })),
+      relations: Object.values(recipe.relations).map(rel => ({
+        parentId: rel.parentId,
+        childId: rel.childId,
+      })),
+    }
+
     const response = await fetch('/api/recipes', {
       method: 'POST',
       headers: {
@@ -306,12 +396,20 @@ const recipeSlice = createSlice({
 
       const currentId = state.recipe.currentStepId;
       const currentStep = state.recipe.steps[currentId];
-      
+
+      if (currentStep.status !== 'created') {
+        currentStep.status = 'modified';
+      }
+
       state.recipe.steps[currentId] = { ...currentStep, ...action.payload };
     },
     setRecipe: (state, action) => {
       if (state.recipe === null) {
         return;
+      }
+
+      if (state.recipe.status !== 'created') {
+        state.recipe.status = 'modified';
       }
 
       state.recipe = { ...state.recipe, ...action.payload };
@@ -504,6 +602,8 @@ const recipeSlice = createSlice({
       if (Object.values(state.recipe.steps).find(step => step.status != 'untouched') !== undefined) {
         return 'modified';
       }
+
+      return 'untouched'
     },
     selectStatusOfCurrent: (state) => {
       if (state.recipe === null) {
@@ -574,17 +674,56 @@ const recipeSlice = createSlice({
       })
       .addCase(createRecipe.fulfilled, (state, action) => {
         state.loading = false;
-        // After creating, you might want to navigate to the new recipe
-        // or update the current recipe state
         state.error = null;
+      })
+      .addCase(deleteRecipe.fulfilled, (state) => {
+        state.recipe = null;
+      })
+      .addCase(updateRecipe.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateRecipe.rejected, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(updateRecipe.fulfilled, (state, action) => {
+        state.loading = false;
+        const payload = action.payload;
+        state.recipe = {
+          id: payload.id,
+          title: payload.title,
+          description: payload.description,
+          owner: payload.owner,
+          status: 'untouched',
+          currentStepId: payload.rootStepId,
+          rootStepId: payload.rootStepId,
+          steps: Object.entries(payload.steps).reduce((acc, [id, step]: [string, any]) => {
+            acc[id] = {
+              id: step.id,
+              title: step.title,
+              instruction: step.instruction,
+              status: 'untouched' as ChangeStatus,
+              ext: step.extension ? {
+                body: step.extension.body,
+                duration: step.extension.duration
+              } : undefined
+            };
+            return acc;
+          }, {} as { [id: string]: Step }),
+          relations: Object.entries(payload.relations).reduce((acc, [key, relation]: [string, any]) => {
+            acc[key] = {
+              status: 'untouched' as ChangeStatus,
+              parentId: relation.parentId,
+              childId: relation.childId
+            };
+            return acc;
+          }, {} as { [id: string]: Relation })
+        };
       });
   }
 });
 
 export const selectChildrenOfCurrent = createSelector(
-  [
-    (state: RootState) => state.recipe.recipe,
-  ],
+  [ (state: RootState) => state.recipe.recipe ],
   (recipe) => {
     if (recipe === null) {
       return [];
@@ -599,9 +738,7 @@ export const selectChildrenOfCurrent = createSelector(
       .map(rel => steps[rel.childId]);
 });
 export const selectParentsOfCurrent = createSelector(
-  [
-    (state: RootState) => state.recipe.recipe,
-  ],
+  [ (state: RootState) => state.recipe.recipe ],
   (recipe) => {
   if (recipe === null) {
     return [];

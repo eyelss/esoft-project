@@ -1,4 +1,6 @@
+import { Request } from "express";
 import * as validator from "express-validator";
+import prisma from "../db";
 
 export const passwordValidator = () => validator
   .body('password')
@@ -16,6 +18,27 @@ export const loginValidator = () => validator
     min: 6,
     max: 16, 
   }).withMessage('Login has to be between 6 and 16');
+
+export const recipeUpdateValidator = () => [
+  validator.param('id')
+  .isString().withMessage('Recipe ID has to be string')
+  .trim()
+  .isLength({ max: 25 }).withMessage('Recipe ID too big')
+  .notEmpty().withMessage('Recipe ID is required')
+  .custom(async (id, { req }) => {
+    const request = req as Express.Request;
+    
+    const recipe = await prisma.recipe.findUnique({
+      where: { id }
+    });
+
+    if (recipe?.authorId !== request.user.id) {
+      throw new Error('You dont have right to update recipe or recipe was not found');
+    }
+
+    return true;
+  })
+];
 
 export const recipeCreateValidator = () => [
   validator.body('title')
