@@ -1,4 +1,4 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import HttpError from "../errors";
 import { verifySession } from "../services/session.service";
 import { User } from "../../generated/prisma";

@@ -1,25 +1,36 @@
 version: '3.8'
 
 services:
-  postgres:
+  postgres_db:
     image: postgres:15
+    hostname: postgres_db
+    container_name: postgres_db
+    restart: always
     environment:
-      POSTGRES_USER: youruser
-      POSTGRES_PASSWORD: yourpassword
-      POSTGRES_DB: yourdb
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
 
   backend:
     build: server/
     ports:
       - "8080:8080"
-    environment:
-      DATABASE_URL: "postgresql://youruser:yourpassword@postgres:5432/yourdb"
+    env_file:
+      - .env
+    # environment:
+    #   DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/postgres"
     depends_on:
-      - postgres
+      postgres_db:
+        condition: service_healthy
 
   frontend:
     build: client/

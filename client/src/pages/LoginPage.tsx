@@ -1,4 +1,4 @@
-import { Button, Paper, Link, TextField, Typography, Snackbar } from "@mui/material";
+import { Button, Paper, Link, TextField, Typography } from "@mui/material";
 import { Link as ReactLink } from "react-router-dom";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -6,15 +6,17 @@ import { verifySession } from "../features/authSlice";
 import { useAppDispatch } from "../store";
 import { RequireNoAuth } from "../components/ProtectedRoute";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
-import { useState } from "react";
 
 const validationSchema = yup.object({
   login: yup
     .string()
+    .min(6)
+    .max(16)
     .required('Login is required.'),
   password: yup
     .string()
     .min(8)
+    .max(25)
     .required('Password is required.'),
 });
 

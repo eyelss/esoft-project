@@ -1,5 +1,4 @@
 import { Box, Typography, LinearProgress, IconButton } from "@mui/material";
-import { useState, useEffect } from "react";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import { formatTime } from "../utils/time";

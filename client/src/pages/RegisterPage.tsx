@@ -1,11 +1,9 @@
 import { Button, Paper, Link, TextField, Typography } from "@mui/material";
 import { useFormik } from "formik";
-import { Link as ReactLink } from "react-router-dom";
+import { Link as ReactLink, useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { RequireNoAuth } from "../components/ProtectedRoute";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
-import { verifySession } from "../features/authSlice";
-import { useAppDispatch } from "../store";
 
 const validationSchema = yup.object({
   login: yup
@@ -23,8 +21,8 @@ const validationSchema = yup.object({
 });
 
 function Register() {
-  const dispatch = useAppDispatch();
   const { loading } = useAuthRedirect();
+  const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {
@@ -44,11 +42,9 @@ function Register() {
         });
 
         if (response.ok) {
-          // After successful registration, verify session to log user in
-          dispatch(verifySession());
+          navigate('/login');
         } else {
-          const error = await response.json();
-          console.error(error);
+          console.error(await response.json());
         }
       } catch (err) {
         console.error(err);

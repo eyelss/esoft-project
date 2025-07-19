@@ -1,4 +1,4 @@
-import { Recipe, Step, StepExtension, User } from "../../generated/prisma";
+import { Recipe, Step, User } from "../../generated/prisma";
 import prisma from "../db";
 
 const PAGE_SIZE = 11;

@@ -1,4 +1,4 @@
-import { AppBar, Box, Button, Typography, Toolbar, IconButton, type SvgIconTypeMap } from "@mui/material";
+import { AppBar, Box, Button, Toolbar, IconButton, type SvgIconTypeMap } from "@mui/material";
 import { Brightness3, Brightness7, Logout } from "@mui/icons-material";
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import type { OverridableComponent } from "@mui/material/OverridableComponent";
