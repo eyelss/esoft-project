@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { trimObject } from "../utils/simple";
+import { fetchApi, trimObject } from "../utils/simple";
 
 export type RecipeListItem = {
   id: string;
@@ -46,7 +46,7 @@ export const fetchRecipes = createAsyncThunk(
     try {
       const params = new URLSearchParams(trimObject(query)).toString();
       
-      const response = await fetch('/api/recipes?' + params);
+      const response = await fetchApi('/api/recipes?' + params);
 
       if (!response.ok) {
         throw new Error('Failed to fetch recipes');

@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { fetchApi } from "../utils/simple";
 
 export type UserType = {
   login: string;
@@ -20,7 +21,7 @@ export const verifySession = createAsyncThunk(
   'auth/verifySession',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/verify', { 
+      const response = await fetchApi('/api/auth/verify', { 
         method: 'POST' 
       });
 
@@ -40,7 +41,7 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await fetch('/api/auth/logout', {
+      await fetchApi('/api/auth/logout', {
         method: 'POST'
       });
     } catch (err) {

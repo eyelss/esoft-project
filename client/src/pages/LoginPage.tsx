@@ -6,6 +6,7 @@ import { verifySession } from "../features/authSlice";
 import { useAppDispatch } from "../store";
 import { RequireNoAuth } from "../components/ProtectedRoute";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
+import { fetchApi } from "../utils/simple";
 
 const validationSchema = yup.object({
   login: yup
@@ -31,7 +32,7 @@ function Login() {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      fetch('/api/auth/login', {
+      fetchApi('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -22,3 +22,6 @@ export function trimObject(object: any) {
 
   return clone;
 }
+
+const apiUrl = import.meta.env.VITE_API_URL;
+export const fetchApi = (path: string, init?: RequestInit) => fetch(`${apiUrl}/${path}`, init);

@@ -4,6 +4,7 @@ import { Link as ReactLink, useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { RequireNoAuth } from "../components/ProtectedRoute";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
+import { fetchApi } from "../utils/simple";
 
 const validationSchema = yup.object({
   login: yup
@@ -33,7 +34,7 @@ function Register() {
     validationSchema: validationSchema,
     onSubmit: async ({ login, password }) => {
       try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetchApi('/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

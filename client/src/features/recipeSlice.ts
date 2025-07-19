@@ -2,6 +2,7 @@ import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit"
 import { hasCycle, isDescendant, canDeleteConnection, getDeletableConnections } from "../utils/graph";
 import { selectLogin } from "./authSlice";
 import type { RootState } from "../store";
+import { fetchApi } from "../utils/simple";
 
 export type ChangeStatus = 
 | 'created'
@@ -207,7 +208,7 @@ export const createRecipe = createAsyncThunk(
       })),
     }
 
-    const response = await fetch('/api/recipes', {
+    const response = await fetchApi('/api/recipes', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
