@@ -7,5 +7,6 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host"] 
+RUN npm run build
+
+CMD ["npx", "serve", "-s", "dist", "-l", "8080"]
