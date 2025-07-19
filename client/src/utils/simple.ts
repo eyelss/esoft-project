@@ -24,4 +24,5 @@ export function trimObject(object: any) {
 }
 
 const apiUrl = process.env.VITE_API_URL;
+console.log(`DEBUG: ${apiUrl}`)
 export const fetchApi = (path: string, init?: RequestInit) => fetch(`${apiUrl}${path}`, init);
