@@ -12,14 +12,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # backend:
-  #   build: server/
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     DATABASE_URL: "postgresql://youruser:yourpassword@postgres:5432/yourdb"
-  #   depends_on:
-  #     - postgres
+  backend:
+    build: server/
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: "postgresql://youruser:yourpassword@postgres:5432/yourdb"
+    depends_on:
+      - postgres
+
+  frontend:
+    build: client/
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
