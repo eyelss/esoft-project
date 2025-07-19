@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import winston from "winston";
 import expressWinston from "express-winston"
@@ -11,6 +12,7 @@ import "./jobs";
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
