@@ -1,9 +1,23 @@
+# FROM node:lts-alpine3.17
+
+# WORKDIR /usr/src/app
+
+# COPY package.json package-lock.json ./
+
+# RUN npm ci
+
+# COPY . .
+
+# RUN npx prisma generate
+# RUN npm run build
+
+# CMD ["sh", "-c", "npm run db:deploy && npm run start"]
+
 FROM node:lts-alpine3.17
 
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-
 RUN npm ci
 
 COPY . .
@@ -11,7 +25,10 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-CMD ["sh", "-c", "npm run db:deploy && npm run start"]
+EXPOSE 8080
+
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+
 # RUN npx prisma generate
 
 
