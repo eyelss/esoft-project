@@ -695,7 +695,7 @@ const recipeSlice = createSlice({
         const errorPayload = action.payload as any;
         state.error = errorPayload?.error || 'Failed to create recipe';
       })
-      .addCase(createRecipe.fulfilled, (state, action) => {
+      .addCase(createRecipe.fulfilled, (state) => {
         state.loading = false;
         state.error = null;
       })
@@ -705,7 +705,7 @@ const recipeSlice = createSlice({
       .addCase(updateRecipe.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateRecipe.rejected, (state, action) => {
+      .addCase(updateRecipe.rejected, (state) => {
         state.loading = false;
       })
       .addCase(updateRecipe.fulfilled, (state, action) => {
