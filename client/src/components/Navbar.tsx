@@ -8,7 +8,7 @@ import { selectTheme, toggleTheme, type ThemeType } from "../features/themeSlice
 import SearchInput from "./Search";
 import { logout, selectUser } from "../features/authSlice";
 import { useAppDispatch } from "../store";
-// import useAuth from "../features/auth/useAuth";
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const themeIcons: Record<ThemeType, OverridableComponent<SvgIconTypeMap<object, "svg">>> = {
   dark: Brightness7,
@@ -33,9 +33,19 @@ function Navbar() {
           <RamenDiningIcon sx={{ mr: 2 }} />
           <SearchInput onSearch={query => navigate({
             pathname: '/',
-            search: query === '' ? undefined : `?q=${query}`
+            search: query.trim() === '' ? undefined : `?q=${query}`
           })}/>
           <Box sx={{ flexGrow: 1 }}/>
+          {user !== null && (
+            <IconButton onClick={() => {
+              navigate({
+                pathname: '/',
+                search: '?f=true',
+              })
+            }}>
+              <FavoriteIcon/>
+            </IconButton>
+          )}
           <IconButton onClick={() => dispatch(toggleTheme())}>
             <IconComponent/>
           </IconButton>

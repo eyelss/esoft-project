@@ -19,22 +19,19 @@ model User {
   updatedAt       DateTime  @updatedAt            @map("updated_at")
   sessions        Session[]
   recipes         Recipe[]
-  comments        Comment[]
+  likedRecipes    UserOnLikedRecipe[]
 
   @@map("users")
 }
 
-model Session {
-  id              String    @id @default(cuid())
-  
-  userId          Int       @map("user_id")
+model UserOnLikedRecipe {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int       @map("user_id")
+  recipe          Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId        String    @map("recipe_id")
 
-  expiredAt       DateTime  @map("expired_at")
-  createdAt       DateTime  @map("created_at")  @default(now())
-  data            Json
-
-  @@map("sessions")
+  @@id([userId, recipeId])
+  @@map("user_on_liked_recipe")
 }
 
 model Recipe {
@@ -49,7 +46,7 @@ model Recipe {
   rootStepId      String    @map("root_step_id") @unique
 
   steps           Step[]    @relation("steps_owning_relation")
-  comments        Comment[]
+  usersLiked      UserOnLikedRecipe[]
 
   @@map("recipes")
 }
@@ -83,16 +80,15 @@ model StepExtension {
   @@map("step_extensions")
 }
 
-model Comment {
-  id              String    @id @default(nanoid())
+model Session {
+  id              String    @id @default(cuid())
+  
+  userId          Int       @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  author          User      @relation(fields: [authorId], references: [id])
-  authorId        Int       @map("author_id")
+  expiredAt       DateTime  @map("expired_at")
+  createdAt       DateTime  @map("created_at")  @default(now())
+  data            Json
 
-  recipe          Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  recipeId        String    @map("recipe_id")
-
-  text            String
-
-  @@map("comments")
+  @@map("sessions")
 }

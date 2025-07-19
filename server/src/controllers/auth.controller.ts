@@ -1,29 +1,25 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import { verifyUser } from "../services/user.service";
 import * as validator from "express-validator";
 import * as userService from "../services/user.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import HttpError from "../errors";
-import { loginValidator, passwordValidator } from "../utils/validators";
+import { signinValidator, signupValidator } from "../utils/validators";
 import { createSession, destroySession, getExpireDate } from "../services/session.service";
 import HttpValidationError from "../errors/validation.error";
 
 const router = Router();
 
-router.get('/check', authMiddleware, (req, res) => {
-  res.status(200).send(req.user);
-});
-
 router.post('/register', 
-  loginValidator(),
-  passwordValidator(),
-  async (req, res, next) => {
+  // loginValidator(),
+  // passwordValidator(),
+  signupValidator(),
+  async (req: Request, res: Response, next: NextFunction) => {
     const result = validator.validationResult(req);
 
     if (!result.isEmpty()) {
       throw new HttpValidationError(result.array());
     }
-
     
     const { login, password } = req.body;
 
@@ -38,9 +34,10 @@ router.post('/register',
 });
 
 router.post('/login',
-  loginValidator(),
-  passwordValidator(),
-  (req, res, next) => {
+  signinValidator(),
+  // loginValidator(),
+  // passwordValidator(),
+  (req: Request, res: Response, next: NextFunction) => {
     
     const result = validator.validationResult(req);
 
@@ -50,23 +47,21 @@ router.post('/login',
 
     const { login, password } = req.body;
 
-    verifyUser(login, password).then(user => {
-      // verification success
-      createSession(user).then(session => {
-        res.cookie('sessionId', session.id, {
-          httpOnly: true,
-          expires: getExpireDate(),
-          secure: process.env.NODE_ENV === 'production',
-        });
-        res.status(200).json({ success: true });
+    verifyUser(login, password)
+      .then(user => createSession(user))
+      .then(session => res.cookie('sessionId', session.id, {
+        httpOnly: true,
+        expires: getExpireDate(),
+        secure: process.env.NODE_ENV === 'production',
+      }).json({ status: 'success'}))
+      .catch(err => {
+        console.log(err);
+        if (err instanceof HttpError) {
+          return next(err);
+        }
+        // verification error
+        next(new HttpError(500, (err as Error).message));
       });
-    }).catch((err: Error) => {
-      if (err instanceof HttpError) {
-        throw err;
-      }
-      // verification error
-      throw new HttpError(500, err.message);
-    });
 });
 
 router.post('/verify', 

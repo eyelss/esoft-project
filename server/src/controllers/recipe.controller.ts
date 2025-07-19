@@ -1,49 +1,52 @@
 import { Router, Request, Response, NextFunction } from "express";
-import NotImplementedError from "../errors/not.impl.error";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { handleValidationErrors } from "../middlewares/validation.middleware";
-import { recipeCreateValidator, recipeUpdateValidator } from "../utils/validators";
+import { recipeCreateValidator, recipesQueryValidator, recipeUpdateValidator } from "../utils/validators";
 import { createRecipe, getRecipes, findRecipe, findRelatedStepsWithRels, extractRelationsFromSteps, deleteRecipe, updateRecipe } from "../services/recipe.service";
 import { findUserById } from "../services/user.service";
 import HttpError from "../errors";
-import { Recipe } from "../../generated/prisma";
+import { weakAuthMiddleware } from "../middlewares/weak.auth.middleware";
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const recipes = await getRecipes({
-      limit: parseInt(req.query.limit as string) || 20,
-      offset: parseInt(req.query.offset as string) || 0
-    });
-    
-    // Transform to match frontend expectations
-    const transformedRecipes = recipes.map(recipe => ({
-      id: recipe.id,
-      title: recipe.title,
-      description: recipe.description,
-      owner: recipe.author.login,
-    }));
-    
-    res.json(transformedRecipes);
-  } catch (error) {
-    next(error);
-  }
+router.use(weakAuthMiddleware);
+
+router.get(
+  '/',
+  recipesQueryValidator(),
+  handleValidationErrors,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = parseInt(req.query.p as string) || 1;
+      const query = req.query.q as string | undefined;
+      const author = req.query.a as string | undefined;
+      const onlyfav = req.query.f as string | undefined;
+
+      const recipes = await getRecipes({
+        page,
+        query,
+        author,
+        favUserId: onlyfav === 'true' ? req.user?.id : undefined,
+      });
+
+      
+      // Transform to match frontend expectations
+      const transformedRecipes = recipes.map(recipe => ({
+        id: recipe.id,
+        title: recipe.title,
+        description: recipe.description,
+        owner: recipe.author.login,
+        likes: recipe._count.usersLiked,
+        likedByMe: req.user ? recipe.usersLiked.find(users => users.userId === req.user.id) : undefined,
+      }));
+
+      res.json(transformedRecipes);
+    } catch (error) {
+      next(error);
+    }
 });
 
-// id: string;
-// title: string;
-// description: string;
-// owner: string;
-
-// status: ChangeStatus;
-// currentStepId: string;
-// rootStepId: string;
-
-// steps: { [id: string]: Step };
-// relations: { [id: string]: Relation };
-
-const transformRecipe = async (recipe: Recipe) => {
+const transformRecipe = async (req: Request, recipe: NonNullable<Awaited<ReturnType<typeof findRecipe>>>) => {
   const user = await findUserById(recipe.authorId);
   const relatedSteps = await findRelatedStepsWithRels(recipe.id);
   const relations = extractRelationsFromSteps(relatedSteps);
@@ -72,8 +75,11 @@ const transformRecipe = async (recipe: Recipe) => {
     relations: relations.reduce((acc, relation) => {
       acc[`${relation.parentId}-${relation.childId}`] = relation;
       return acc;
-    }, {} as any)
+    }, {} as any),
+    likes: recipe._count.usersLiked,
+    likedByMe: req.user ? recipe.usersLiked.some(users => users.userId === req.user.id) : undefined,
   }
+  
 
   return body;
 }
@@ -86,7 +92,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
     
-    res.status(200).json(await transformRecipe(recipe));
+    res.status(200).json(await transformRecipe(req, recipe));
   } catch (error) {
     next(error);
   }
@@ -109,7 +115,7 @@ router.post(
         authorId
       });
       
-      res.status(201).json(await transformRecipe(recipe));
+      res.status(201).json(await transformRecipe(req, recipe));
     } catch (error) {
       next(error);
     }
@@ -130,7 +136,7 @@ router.patch(
         return;
       }
 
-      res.status(200).json(await transformRecipe(recipe));
+      res.status(200).json(await transformRecipe(req, recipe));
     } catch (err) {
       next(err);
     }

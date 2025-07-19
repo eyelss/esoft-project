@@ -6,7 +6,6 @@ cron.schedule('0 0 * * *', async () => {
   try {
     const payload = await destroyExpiredSessions();
 
-    console.log(`Deleted ${payload.count} expired sessions...`);
   } catch (err) {
     console.error(err);
   }

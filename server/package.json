@@ -24,7 +24,8 @@
     "express-validator": "^7.2.1",
     "express-winston": "^4.2.0",
     "node-cron": "^4.2.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.2",

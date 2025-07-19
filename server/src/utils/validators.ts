@@ -1,26 +1,69 @@
-import { Request } from "express";
 import * as validator from "express-validator";
 import prisma from "../db";
 
-export const passwordValidator = () => validator
-  .body('password')
-  .isString().withMessage('Password has to be string')
-  .trim()
-  .isStrongPassword({
-    minSymbols: 0,
-  }).withMessage('Weak password');
+const PASSWORD_LENGTH_MIN = 8;
+const PASSWORD_LENGTH_MAX = 25;
+const PASSWORD_NUMBER_MIN = 1;
+const PASSWORD_LOWERCASE_MIN = 1;
+const PASSWORD_UPPERCASE_MIN = 1;
+const PASSWORD_SYMBOLS_MIN = 0;
+
+const LOGIN_LENGTH_MIN = 6;
+const LOGIN_LENGTH_MAX = 16;
 
 export const loginValidator = () => validator
   .body('login')
   .isString().withMessage('Login has to be string')
   .trim()
   .isLength({ 
-    min: 6,
-    max: 16, 
+    min: LOGIN_LENGTH_MIN,
+    max: LOGIN_LENGTH_MAX, 
   }).withMessage('Login has to be between 6 and 16');
 
-export const recipeUpdateValidator = () => [
-  validator.param('id')
+export const signupValidator = () => [
+  validator
+  .body('login')
+  .isString().withMessage('Login has to be string')
+  .trim()
+  .isLength({ 
+    min: LOGIN_LENGTH_MIN,
+    max: LOGIN_LENGTH_MAX, 
+  }).withMessage('Login has to be between 6 and 16'),
+  validator
+    .body('password')
+    .isString().withMessage('Password has to be string')
+    .isLength({ min: PASSWORD_LENGTH_MIN, max: PASSWORD_LENGTH_MAX }).withMessage('Password length violation.')
+    .isStrongPassword({
+      minLowercase: PASSWORD_LOWERCASE_MIN,
+      minUppercase: PASSWORD_UPPERCASE_MIN,
+      minNumbers: PASSWORD_NUMBER_MIN,
+      minSymbols: PASSWORD_SYMBOLS_MIN,
+    }).withMessage('Weak password'),
+];
+
+// export const passwordValidator = () => validator
+//   .body('password')
+//   .isString().withMessage('Password has to be string')
+//   .isLength({ min: PASSWORD_LENGTH_MIN, max: PASSWORD_LENGTH_MAX }).withMessage('Password length violation.')
+//   .isStrongPassword({
+//     minLowercase: PASSWORD_LOWERCASE_MIN,
+//     minUppercase: PASSWORD_UPPERCASE_MIN,
+//     minNumbers: PASSWORD_NUMBER_MIN,
+//     minSymbols: PASSWORD_SYMBOLS_MIN,
+//   }).withMessage('Weak password');
+
+
+
+export const signinValidator = () => [
+  loginValidator(),
+  validator
+    .body('password')
+    .isString().withMessage('Password has to be string')
+    .isLength({ min: PASSWORD_LENGTH_MIN, max: PASSWORD_LENGTH_MAX }).withMessage('Password length violation.')
+];
+
+export const recipeUpdateValidator = () => validator
+  .param('id')
   .isString().withMessage('Recipe ID has to be string')
   .trim()
   .isLength({ max: 25 }).withMessage('Recipe ID too big')
@@ -37,8 +80,7 @@ export const recipeUpdateValidator = () => [
     }
 
     return true;
-  })
-];
+  });
 
 export const recipeCreateValidator = () => [
   validator.body('title')
@@ -137,4 +179,22 @@ export const recipeCreateValidator = () => [
       
       return true;
     })
+];
+
+export const recipesQueryValidator = () => [
+  validator.query('q') // query
+    .optional()
+    .isString().withMessage('Query has to be string')
+    .isLength({ min: 1, max: 30 }).withMessage('Query has to be between 1 and 30 chars'),
+
+  validator.query('a') // author
+    .optional()
+    .isString().withMessage('Author parameter has to be string')
+    .isLength({ min: LOGIN_LENGTH_MIN, max: LOGIN_LENGTH_MAX })
+    .withMessage(`Query has to be between ${LOGIN_LENGTH_MIN} and ${LOGIN_LENGTH_MAX} chars`),
+  
+  validator.query('p') // page
+    .optional()
+    .isNumeric().withMessage('Page has to be integer')
+    .custom((page) => isFinite(page) && parseInt(page) > 0).withMessage('Page has to be finite and bigger then 0'),
 ];

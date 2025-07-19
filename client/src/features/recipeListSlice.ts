@@ -1,10 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { trimObject } from "../utils/simple";
 
 export type RecipeListItem = {
   id: string;
   title: string;
   description: string;
   owner: string;
+  likes: number;
+  likedByMe?: boolean;
 };
 
 type RecipeListState = {
@@ -13,33 +16,47 @@ type RecipeListState = {
   error: string | null;
 };
 
+type RecipeQuery = {
+  q?: string;
+  a?: string;
+  p?: number;
+  f?: string;
+};
+
 const initialState: RecipeListState = {
   recipes: [],
   loading: false,
   error: null,
 };
 
-export const fetchAllRecipes = createAsyncThunk(
-  'recipeList/fetchAllRecipes',
-  async (_, { rejectWithValue }) => {
+const transformRecipe = (backRecipes: any[]) => {
+  return backRecipes.map(recipe => ({
+    id: recipe.id,
+    title: recipe.title,
+    description: recipe.description,
+    likes: recipe.likes,
+    likedByMe: recipe.likedByMe,
+    owner: recipe.owner || 'Unknown',
+  }));
+}
+
+export const fetchRecipes = createAsyncThunk(
+  'recipeList/fetchRecipes',
+  async (query: RecipeQuery, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/recipes');
+      const params = new URLSearchParams(trimObject(query)).toString();
       
+      const response = await fetch('/api/recipes?' + params);
+
       if (!response.ok) {
         throw new Error('Failed to fetch recipes');
       }
-      
+
       const recipes = await response.json();
-      
-      // Transform backend response to match frontend format
-      return recipes.map((recipe: any) => ({
-        id: recipe.id,
-        title: recipe.title,
-        description: recipe.description,
-        owner: recipe.owner || 'Unknown',
-      }));
+
+      return transformRecipe(recipes);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue((err as Error).message)
     }
   }
 );
@@ -55,16 +72,16 @@ const recipeListSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllRecipes.pending, (state) => {
+      .addCase(fetchRecipes.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchAllRecipes.fulfilled, (state, action) => {
+      .addCase(fetchRecipes.fulfilled, (state, action) => {
         state.loading = false;
         state.recipes = action.payload;
         state.error = null;
       })
-      .addCase(fetchAllRecipes.rejected, (state, action) => {
+      .addCase(fetchRecipes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

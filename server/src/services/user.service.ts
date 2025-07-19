@@ -1,6 +1,7 @@
 import prisma from "../db";
 import argon2 from "argon2";
 import { User } from "../../generated/prisma";
+import HttpError from "../errors";
 
 type CreateUserDto = {
   login: User['login'];
@@ -41,13 +42,13 @@ export const verifyUser = async (login: User['login'], password: string): Promis
   const user = await prisma.user.findUnique({ where: { login }});
 
   if (user === null) {
-    throw new Error('User is not found');
+    throw new HttpError(404, 'User is not found');
   }
 
   const verificationResult = await argon2.verify(user.hashPassword, password);
   
   if (!verificationResult) {
-    throw new Error('Verification falied');
+    throw new HttpError(401, 'Verification falied');
   }
 
   return user;

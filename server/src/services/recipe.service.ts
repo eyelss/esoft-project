@@ -1,25 +1,52 @@
 import { Recipe, Step, StepExtension, User } from "../../generated/prisma";
 import prisma from "../db";
 
-// id: string;
-//   title: string;
-//   description: string;
-//   owner: string;
-//   createdAt: string;
-//   updatedAt: string;
+const PAGE_SIZE = 11;
 
+type GetParams = {
+  query?: string;
+  author?: string;
+  page: number;
+  favUserId?: User['id'],
+}
 
-export const getRecipes = async ({ limit = 20, offset = 0 }) => {
+export const getRecipes = async (params: GetParams) => {
+  const limit = PAGE_SIZE;
+  const offset = PAGE_SIZE * (params.page - 1);
+
   return await prisma.recipe.findMany({
-    skip: offset,
-    take: limit,
+
     include: {
       author: {
         select: {
           login: true
         }
+      },
+      usersLiked: true,
+      _count: {
+        select: { usersLiked: true }
       }
-    }
+    },
+    where: {
+      author: {
+        login: params.author,
+      },
+      title: {
+        contains: params.query,
+      },
+      ...(params.favUserId !== undefined && {
+        usersLiked: {
+          some: { userId: params.favUserId }
+        }
+      })
+    },
+    orderBy: {
+      usersLiked: {
+        _count: 'desc',
+      },
+    },
+    skip: offset,
+    take: limit,
   });
 }
 
@@ -27,6 +54,12 @@ export const findRecipe = async (id: Recipe['id']) => {
   return await prisma.recipe.findUnique({
     where: {
       id
+    },
+    include: {
+      usersLiked: true,
+      _count: {
+        select: { usersLiked: true }
+      },
     }
   });
 }
@@ -59,7 +92,6 @@ export const extractRelationsFromSteps = (steps: any[]) => {
   return relations;
 }
 
-// Alternative: Direct query for relations (more efficient for large recipes)
 export const getRecipeRelations = async (recipeId: Recipe['id']) => {
   const steps = await prisma.step.findMany({
     where: { recipeId },
@@ -150,6 +182,12 @@ export const createRecipe = async (dto: CreateRecipeDto) => {
         description: dto.description,
         authorId: dto.authorId,
         rootStepId: rootStep.id,
+      },
+      include: {
+        usersLiked: true,
+        _count: {
+          select: { usersLiked: true }
+        },
       }
     });
     
@@ -287,12 +325,40 @@ export const updateRecipe = async (id: Recipe['id'], dto: UpdateRecipeDto) => {
       }
     }
 
-    return await ctx.recipe.findUnique({ where: { id }});
+    return await ctx.recipe.findUnique({ 
+      where: { id }, 
+      include: {
+        usersLiked: true,
+        _count: {
+          select: { usersLiked: true }
+        },
+      }
+    });
   });
 }
 
 export const deleteRecipe = async (id: Recipe['id']) => {
   return await prisma.recipe.delete({
     where: { id }
+  });
+}
+
+export const addLike = async (recipeId: Recipe['id'], userId: User['id']) => {
+  return await prisma.userOnLikedRecipe.create({
+    data: {
+      userId,
+      recipeId,
+    }
+  });
+}
+
+export const deleteLike = async (recipeId: Recipe['id'], userId: User['id']) => {
+  return await prisma.userOnLikedRecipe.delete({
+    where: {
+      userId_recipeId: {
+        recipeId,
+        userId,
+      }
+    }
   });
 }

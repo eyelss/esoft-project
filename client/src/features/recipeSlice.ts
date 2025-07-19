@@ -37,7 +37,6 @@ type StepExt = {
 };
 
 export type Relation = {
-  // id: string;
   status: ChangeStatus;
   parentId: string;
   childId: string;
@@ -48,6 +47,9 @@ export type Recipe = {
   title: string;
   description: string;
   owner: string;
+
+  likes: number;
+  likedByMe?: boolean;
 
   status: ChangeStatus;
   currentStepId: string;
@@ -355,6 +357,8 @@ const recipeSlice = createSlice({
         rootStepId: stepId,
         steps: {},
         relations: {},
+        likes: 0,
+        likedByMe: false,
       }
 
       state.recipe.steps[stepId] = root;
@@ -545,6 +549,19 @@ const recipeSlice = createSlice({
         state.playMode.status = 'completed';
       }
     },
+    toggleLike: (state) => {
+      if (state.recipe === null) {
+        return;
+      }
+      
+      if (state.recipe.likedByMe) {
+        state.recipe.likes--;
+      } else {
+        state.recipe.likes++;
+      }
+
+      state.recipe.likedByMe = !state.recipe.likedByMe;
+    }
   },
   selectors: {
     selectRecipe: (state) => {
@@ -603,6 +620,10 @@ const recipeSlice = createSlice({
         return 'modified';
       }
 
+      if (Object.values(state.recipe.relations).find(rel => rel.status != 'untouched') !== undefined) {
+        return 'modified';
+      }
+
       return 'untouched'
     },
     selectStatusOfCurrent: (state) => {
@@ -638,6 +659,8 @@ const recipeSlice = createSlice({
           status: 'untouched',
           currentStepId: payload.rootStepId,
           rootStepId: payload.rootStepId,
+          likes: payload.likes,
+          likedByMe: payload.likedByMe,
           steps: Object.entries(payload.steps).reduce((acc, [id, step]: [string, any]) => {
             acc[id] = {
               id: step.id,
@@ -696,6 +719,8 @@ const recipeSlice = createSlice({
           status: 'untouched',
           currentStepId: payload.rootStepId,
           rootStepId: payload.rootStepId,
+          likes: payload.likes,
+          likedByMe: payload.likedByMe,
           steps: Object.entries(payload.steps).reduce((acc, [id, step]: [string, any]) => {
             acc[id] = {
               id: step.id,
@@ -851,6 +876,7 @@ export const {
   stopPlayMode,
   completeStep,
   skipStep,
+  toggleLike,
 } = recipeSlice.actions;
 
 export const {  
@@ -858,18 +884,12 @@ export const {
   selectLoading,
   selectError,
   selectCurrentStep,
-  // selectChildrenOfCurrent,
-  // selectParentsOfCurrent,
   selectStatusOfCurrent,
-  // selectPossibleChildren,
   selectDeletableConnections,
-  // selectDeletableParentConnections,
-  // selectDeletableChildConnections,
   selectPlayModeStatus,
   selectActiveSteps,
   selectCompletedSteps,
   selectStepTimers,
-  // selectActiveStepsList,
   selectRecipeChangeStatus,
 } = recipeSlice.selectors;
 

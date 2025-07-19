@@ -11,7 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
-import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep, selectRecipeChangeStatus, selectStatusOfCurrent, updateRecipe, createRecipe, deleteRecipe } from "../features/recipeSlice";
+import { downloadRecipe, createEmpty, selectCurrentStep, selectParentsOfCurrent, selectChildrenOfCurrent, appendStep, selectPossibleChildren, shiftCurrent, createConn, expandCurrent, setCurrent, selectRecipe, selectIsUserOwner, setRecipe, deleteConn, selectDeletableParentConnections, selectDeletableChildConnections, selectPlayModeStatus, selectLoading, selectError, deleteStep, selectRecipeChangeStatus, selectStatusOfCurrent, updateRecipe, createRecipe, deleteRecipe, toggleLike } from "../features/recipeSlice";
 import { selectUser } from "../features/authSlice";
 import { TransitionGroup } from 'react-transition-group';
 import ListItemButtonStep from "../components/ListItemButtonStep";
@@ -19,8 +19,8 @@ import PlayMode from "../components/PlayMode";
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 import useRecipeAuth from "../hooks/useRecipeAuth";
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
-// Loading Skeleton Components
 const RecipeSkeleton = () => (
   <Box sx={{ p: 2 }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -130,13 +130,11 @@ function Editor() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentStep = useSelector(selectCurrentStep);
-  // WARNING! SHOULD MEMOIZE THESE SELECTORS:
   const children = useSelector(selectChildrenOfCurrent);
   const parents = useSelector(selectParentsOfCurrent);
   const possibleChildren = useSelector(selectPossibleChildren);
   const deletableParentConnections = useSelector(selectDeletableParentConnections);
   const deletableChildConnections = useSelector(selectDeletableChildConnections);
-  // ---
   const recipe = useSelector(selectRecipe);
   const { title, description, status } = recipe || {};
   const isOwning = useSelector(selectIsUserOwner);
@@ -148,6 +146,8 @@ function Editor() {
   const stepChangeStatus = useSelector(selectStatusOfCurrent);
 
   const params = useParams();
+
+  // const [liked, setLiked] = useState(false);
 
   // Get loading and error states from Redux
   const loading = useSelector(selectLoading);
@@ -281,7 +281,6 @@ function Editor() {
   }
 
   const handleRecipeDelete = async () => {
-    
     if (params.recipeId === undefined || recipe?.id !== params.recipeId) {
       return;
     }
@@ -290,6 +289,18 @@ function Editor() {
 
     if (deleteRecipe.fulfilled.match(result)) {
       navigate('/');
+    }
+  }
+
+  const handleLike = async () => {
+    const action = recipe?.likedByMe ? 'removelike' : 'like';
+    
+    const response = await fetch(`/api/feedback/${action}/${recipe?.id}`, {
+      method: 'POST'
+    });
+
+    if (response.ok) {
+      dispatch(toggleLike());
     }
   }
 
@@ -340,8 +351,27 @@ function Editor() {
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h5">
-                {title || 'Recipe Title'}
+                {title || 'Recipe Title'} by{' '}
+                <Link
+                  component="button" 
+                  onClick={() => {
+                    navigate({
+                      pathname: '/',
+                      search: '?a='+recipe?.owner,
+                    })
+                  }}>
+                    {recipe?.owner}
+                </Link>
               </Typography>
+              <Box flexGrow={1}/>
+              {user && (
+                <>
+                <IconButton onClick={handleLike} color={recipe?.likedByMe ? "error" : "default"}>
+                  <FavoriteIcon/>
+                </IconButton>
+                <Typography variant="body2" sx={{ mr: 2 }}>{recipe?.likes}</Typography>
+              </>
+              )}
               {(isOwning || (status === 'created')) && (
                 <Button
                   variant="outlined"
@@ -616,7 +646,9 @@ function Editor() {
         <DialogActions>
           <Button onClick={() => setDialOpen(false)}>Cancel</Button>
           <Button onClick={() => {
-            dispatch(createConn({ parentId: currentStep?.id, childId: selectedStepId }))
+            if (selectedStepId !== '') {
+              dispatch(createConn({ parentId: currentStep?.id, childId: selectedStepId }))
+            }
             setDialOpen(false);
           }}>Ok</Button>
         </DialogActions>
