@@ -9,7 +9,7 @@ export const getCookieOptions = (req: Request) => {
   return {
     httpOnly: true,
     secure: false, // isProduction && isHttps,
-    sameSite: 'lax', // isProduction ? 'none' as const : 'lax' as const,
+    sameSite: 'lax' as const, // isProduction ? 'none' as const : 'lax' as const,
     // domain: isProduction ? '.railway.app' : undefined,
   };
 }; 
