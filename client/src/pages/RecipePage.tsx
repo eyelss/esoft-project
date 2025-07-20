@@ -20,6 +20,7 @@ import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { parseTime } from "../utils/time";
 import useRecipeAuth from "../hooks/useRecipeAuth";
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import { fetchApi } from "../utils/simple";
 
 const RecipeSkeleton = () => (
   <Box sx={{ p: 2 }}>
@@ -295,8 +296,9 @@ function Editor() {
   const handleLike = async () => {
     const action = recipe?.likedByMe ? 'removelike' : 'like';
     
-    const response = await fetch(`/api/feedback/${action}/${recipe?.id}`, {
-      method: 'POST'
+    const response = await fetchApi(`/api/feedback/${action}/${recipe?.id}`, {
+      method: 'POST',
+      credentials: 'include',
     });
 
     if (response.ok) {
