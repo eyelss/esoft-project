@@ -62,7 +62,8 @@ router.post('/login',
         console.log('Setting sessionId cookie:', session.id);
         console.log('Cookie options:', cookieOptions);
         
-        res.cookie('sessionId', session.id, cookieOptions).json({ status: 'success'});
+        res.cookie('sessionId', session.id, cookieOptions);
+        res.json({ status: 'success' });
       })
       .catch(err => {
         console.log(err);
