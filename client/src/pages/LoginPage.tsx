@@ -41,6 +41,7 @@ function Login() {
           login: values.login,
           password: values.password,
         }),
+        credentials: 'same-origin',
       }).then(response => {
         if (response.ok) {
           dispatch(verifySession());
