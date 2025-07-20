@@ -46,7 +46,9 @@ export const fetchRecipes = createAsyncThunk(
     try {
       const params = new URLSearchParams(trimObject(query)).toString();
       
-      const response = await fetchApi('/api/recipes?' + params);
+      const response = await fetchApi('/api/recipes?' + params, {
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch recipes');

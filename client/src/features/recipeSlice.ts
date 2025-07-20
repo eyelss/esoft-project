@@ -88,7 +88,9 @@ const initialState = {
 export const downloadRecipe = createAsyncThunk(
   'recipe/downloadRecipe',
   async ( id: string, { rejectWithValue } ) => {
-    const response = await fetch(`/api/recipes/${id}`);
+    const response = await fetch(`/api/recipes/${id}`, {
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       return await rejectWithValue(response.status)
