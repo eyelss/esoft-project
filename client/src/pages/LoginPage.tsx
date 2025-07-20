@@ -33,6 +33,7 @@ function Login() {
     validationSchema: validationSchema,
     onSubmit: (values) => {
       fetchApi('/api/auth/login', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
