@@ -8,18 +8,24 @@ import recipesController from "./controllers/recipe.controller";
 import feedbackController from "./controllers/feedback.controller";
 import { errorHandler } from "./middlewares/error.handler";
 
+
 import "./jobs";
 
 const app = express();
 
+if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+  console.error('Set up FRONTEND_URL environment variable.');
+}
+
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.up.railway.app']
+    ? [process.env.FRONTEND_URL!]
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true, // This is crucial for cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
 
 app.use(cors(corsOptions));
 app.use(express.json());
