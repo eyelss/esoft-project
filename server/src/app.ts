@@ -25,6 +25,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+console.log(process.env.NODE_ENV);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
