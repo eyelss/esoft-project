@@ -50,7 +50,6 @@ router.post('/login',
 
     verifyUser(login, password)
       .then(user => {
-        console.log('Login successful for user:', user.login);
         return createSession(user);
       })
       .then(session => {
@@ -58,15 +57,11 @@ router.post('/login',
           ...getCookieOptions(req),
           expires: getExpireDate(),
         };
-        
-        console.log('Setting sessionId cookie:', session.id);
-        console.log('Cookie options:', cookieOptions);
-        
+                
         res.cookie('sessionId', session.id, cookieOptions);
         res.json({ status: 'success' });
       })
       .catch(err => {
-        console.log(err);
         if (err instanceof HttpError) {
           return next(err);
         }
@@ -78,8 +73,6 @@ router.post('/login',
 router.post('/verify', 
   authMiddleware,
   (req, res, next) => {
-    console.log('Verify successful for user:', req.user.login);
-    console.log('Received sessionId cookie:', req.cookies.sessionId);
     res.status(200).json({
       login: req.user.login,
     })

@@ -67,7 +67,6 @@ function SearchInput({ onSearch }: Props) {
         }}
         placeholder="Search recipe"
         inputProps={{ 'aria-label': 'search' }}
-        onSubmit={() => console.log('search')}
       />
     </Search>
   );
