@@ -15,12 +15,16 @@ declare global {
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const sessionId = req.cookies.sessionId;
 
+  console.log('sid', sessionId);
+
   if (sessionId === undefined) {
     throw new HttpError(401, 'Session id is missing');
   }
-
+  
   const result = await verifySession(sessionId)
   
+  console.log('result', result);
+
   if (result === null) {
     res.clearCookie('sessionId', getCookieOptions(req));
     throw new HttpError(401, 'Verfication is failed');
