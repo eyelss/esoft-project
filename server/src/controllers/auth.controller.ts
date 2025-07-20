@@ -103,4 +103,20 @@ router.post('/logout',
     });
 });
 
+router.get('/test-cookie', (req, res) => {
+  const testValue = 'test-cookie-value-' + Date.now();
+  const cookieOptions = {
+    ...getCookieOptions(req),
+    expires: new Date(Date.now() + 1000 * 60 * 60), // 1 hour
+  };
+  
+  res.cookie('testCookie', testValue, cookieOptions);
+  res.json({ 
+    message: 'Test cookie set', 
+    value: testValue,
+    cookieOptions,
+    receivedCookies: req.cookies
+  });
+});
+
 export default router;
