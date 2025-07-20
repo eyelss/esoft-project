@@ -11,6 +11,13 @@ import { getCookieOptions } from "../utils/cookie.util";
 
 const router = Router();
 
+router.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+})
+
 router.post('/register', 
   // loginValidator(),
   // passwordValidator(),
