@@ -8,6 +8,6 @@ export const getCookieOptions = (req: Request) => {
     httpOnly: true,
     secure: isProduction && isHttps,
     sameSite: isProduction ? 'none' as const : 'lax' as const,
-    domain: isProduction ? '.railway.app' : undefined,
+    // domain: isProduction ? '.railway.app' : undefined,
   };
 }; 
