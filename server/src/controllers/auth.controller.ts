@@ -34,7 +34,7 @@ router.post('/register',
     res.status(201).json(user);
 });
 
-router.post('/login',
+router.get('/login',
   signinValidator(),
   // loginValidator(),
   // passwordValidator(),
@@ -85,7 +85,7 @@ router.post('/verify',
     })
 });
 
-router.post('/logout', 
+router.get('/logout', 
   authMiddleware, 
   (req, res, next) => {
     const sessionId = req.cookies.sessionId;

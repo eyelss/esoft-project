@@ -8,7 +8,6 @@ import recipesController from "./controllers/recipe.controller";
 import feedbackController from "./controllers/feedback.controller";
 import { errorHandler } from "./middlewares/error.handler";
 
-
 import "./jobs";
 
 const app = express();
@@ -25,7 +24,6 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
-
 
 app.use(cors(corsOptions));
 app.use(express.json());
