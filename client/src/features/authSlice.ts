@@ -22,7 +22,8 @@ export const verifySession = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await fetchApi('/api/auth/verify', { 
-        method: 'POST' 
+        method: 'POST',
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -42,7 +43,8 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await fetchApi('/api/auth/logout', {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include',
       });
     } catch (err) {
       return rejectWithValue((err as Error).message);
