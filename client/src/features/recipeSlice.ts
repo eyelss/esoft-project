@@ -88,7 +88,7 @@ const initialState = {
 export const downloadRecipe = createAsyncThunk(
   'recipe/downloadRecipe',
   async ( id: string, { rejectWithValue } ) => {
-    const response = await fetch(`/api/recipes/${id}`, {
+    const response = await fetchApi(`/api/recipes/${id}`, {
       credentials: 'include',
     });
 
@@ -103,7 +103,7 @@ export const downloadRecipe = createAsyncThunk(
 export const deleteRecipe = createAsyncThunk(
   'recipe/deleteRecipe',
   async (id: Recipe['id'], { rejectWithValue }) => {
-    const response = await fetch(`/api/recipes/${id}`, {
+    const response = await fetchApi(`/api/recipes/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -169,7 +169,7 @@ export const updateRecipe = createAsyncThunk(
         })),
     }
 
-    const response = await fetch(`/api/recipes/${recipe.id}`, {
+    const response = await fetchApi(`/api/recipes/${recipe.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
