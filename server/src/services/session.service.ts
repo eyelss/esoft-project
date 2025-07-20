@@ -2,7 +2,7 @@ import { Session, User } from "../../generated/prisma";
 import { InputJsonValue } from "../../generated/prisma/runtime/library";
 import prisma from "../db";
 
-const HOURS = 1;
+const HOURS = 36;
 
 export const getExpireDate = () => new Date(Date.now() + 1000 * 60 * 60 * HOURS);
 
