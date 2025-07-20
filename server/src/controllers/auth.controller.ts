@@ -7,6 +7,7 @@ import HttpError from "../errors";
 import { signinValidator, signupValidator } from "../utils/validators";
 import { createSession, destroySession, getExpireDate } from "../services/session.service";
 import HttpValidationError from "../errors/validation.error";
+import { getCookieOptions } from "../utils/cookie.util";
 
 const router = Router();
 
@@ -49,11 +50,20 @@ router.post('/login',
 
     verifyUser(login, password)
       .then(user => createSession(user))
-      .then(session => res.cookie('sessionId', session.id, {
-        httpOnly: true,
-        expires: getExpireDate(),
-        secure: process.env.NODE_ENV === 'production',
-      }).json({ status: 'success'}))
+      .then(session => {
+        const cookieOptions = {
+          ...getCookieOptions(req),
+          expires: getExpireDate(),
+        };
+
+        res.cookie('sessionId', session.id, cookieOptions).json({ status: 'success' })
+      })
+      // .then(session => res.cookie('sessionId', session.id, {
+      //   httpOnly: true,
+      //   expires: getExpireDate(),
+      //   secure: process.env.NODE_ENV === 'production',
+      // })
+      // .json({ status: 'success'}))
       .catch(err => {
         console.log(err);
         if (err instanceof HttpError) {
@@ -82,7 +92,7 @@ router.post('/logout',
     }
 
     destroySession(sessionId).then(result => {
-      res.clearCookie('sessionId')
+      res.clearCookie('sessionId', getCookieOptions(req))
       res.sendStatus(200);
     }).catch(err => {
       if (err instanceof HttpError) {

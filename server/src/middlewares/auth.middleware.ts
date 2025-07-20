@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import HttpError from "../errors";
 import { verifySession } from "../services/session.service";
 import { User } from "../../generated/prisma";
+import { getCookieOptions } from "../utils/cookie.util";
 
 declare global {
   namespace Express {
@@ -21,7 +22,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const result = await verifySession(sessionId)
   
   if (result === null) {
-    res.clearCookie('sessionId');
+    res.clearCookie('sessionId', getCookieOptions(req));
     throw new HttpError(401, 'Verfication is failed');
   }
 
