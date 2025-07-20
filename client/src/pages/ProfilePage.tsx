@@ -18,7 +18,7 @@ function Profile() {
             navigate({
               pathname: '/',
               search: '?a=' + user?.login,
-            })
+            });
           }}>
           {user?.login}
         </Link>

@@ -103,6 +103,7 @@ export const deleteRecipe = createAsyncThunk(
   async (id: Recipe['id'], { rejectWithValue }) => {
     const response = await fetch(`/api/recipes/${id}`, {
       method: 'DELETE',
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -171,6 +172,7 @@ export const updateRecipe = createAsyncThunk(
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(payload),
     });
 
@@ -213,6 +215,7 @@ export const createRecipe = createAsyncThunk(
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(recipeData),
     });
 

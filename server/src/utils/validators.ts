@@ -20,6 +20,16 @@ export const loginValidator = () => validator
     max: LOGIN_LENGTH_MAX, 
   }).withMessage('Login has to be between 6 and 16');
 
+export const changeLoginValidator = () => validator
+  .body('newLogin')
+  .isString().withMessage('Login has to be string')
+  .trim()
+  .isLength({ 
+    min: LOGIN_LENGTH_MIN,
+    max: LOGIN_LENGTH_MAX, 
+  }).withMessage('Login has to be between 6 and 16');
+
+
 export const signupValidator = () => [
   validator
   .body('login')
