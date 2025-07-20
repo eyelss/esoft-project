@@ -4,6 +4,8 @@ export const getCookieOptions = (req: Request) => {
   const isProduction = process.env.NODE_ENV === 'production';
   const isHttps = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https';
   
+  console.log('isHttps: ' + isHttps);
+
   return {
     httpOnly: true,
     secure: false, // isProduction && isHttps,
