@@ -42,6 +42,7 @@ function Login() {
           password: values.password,
         }),
         credentials: 'include',
+        mode: 'no-cors',
       }).then(response => {
         if (response.ok) {
           dispatch(verifySession());
