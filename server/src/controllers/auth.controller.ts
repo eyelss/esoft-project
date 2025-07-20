@@ -49,21 +49,21 @@ router.post('/login',
     const { login, password } = req.body;
 
     verifyUser(login, password)
-      .then(user => createSession(user))
+      .then(user => {
+        console.log('Login successful for user:', user.login);
+        return createSession(user);
+      })
       .then(session => {
         const cookieOptions = {
           ...getCookieOptions(req),
           expires: getExpireDate(),
         };
-
-        res.cookie('sessionId', session.id, cookieOptions).json({ status: 'success' })
+        
+        console.log('Setting sessionId cookie:', session.id);
+        console.log('Cookie options:', cookieOptions);
+        
+        res.cookie('sessionId', session.id, cookieOptions).json({ status: 'success'});
       })
-      // .then(session => res.cookie('sessionId', session.id, {
-      //   httpOnly: true,
-      //   expires: getExpireDate(),
-      //   secure: process.env.NODE_ENV === 'production',
-      // })
-      // .json({ status: 'success'}))
       .catch(err => {
         console.log(err);
         if (err instanceof HttpError) {
@@ -77,6 +77,8 @@ router.post('/login',
 router.post('/verify', 
   authMiddleware,
   (req, res, next) => {
+    console.log('Verify successful for user:', req.user.login);
+    console.log('Received sessionId cookie:', req.cookies.sessionId);
     res.status(200).json({
       login: req.user.login,
     })
