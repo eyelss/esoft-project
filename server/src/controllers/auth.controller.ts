@@ -11,6 +11,14 @@ import { getCookieOptions } from "../utils/cookie.util";
 
 const router = Router();
 
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 router.post('/register', 
   // loginValidator(),
   // passwordValidator(),
@@ -34,7 +42,7 @@ router.post('/register',
     res.status(201).json(user);
 });
 
-router.get('/login',
+router.post('/login',
   signinValidator(),
   // loginValidator(),
   // passwordValidator(),
@@ -85,7 +93,7 @@ router.post('/verify',
     })
 });
 
-router.get('/logout', 
+router.post('/logout', 
   authMiddleware, 
   (req, res, next) => {
     const sessionId = req.cookies.sessionId;

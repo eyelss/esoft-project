@@ -41,7 +41,9 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await fetchApi('/api/auth/logout');
+      await fetchApi('/api/auth/logout', {
+        method: 'POST'
+      });
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
